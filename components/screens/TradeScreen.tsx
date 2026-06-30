@@ -1,7 +1,15 @@
 "use client";
 
 import { companies, fmt, vibeColors } from "@/lib/nudge-data";
-import type { Wallet } from "@/lib/nudge-types";
+import type { Wallet } from "@/lib/wallet";
+
+// Trade screen doesn't fetch live prices (yet) — use the matching preset's
+// static reference price if the holding is one of the 3 presets, else fall
+// back to the holding's own average cost (flat P/L) so a non-preset holding
+// (from search) still displays safely instead of crashing.
+function currentPriceFor(symbol: string, avgPrice: number): number {
+  return companies.find((c) => c.symbol === symbol)?.price ?? avgPrice;
+}
 
 export default function TradeScreen({
   wallet,
@@ -12,23 +20,22 @@ export default function TradeScreen({
   onReset: () => void;
   onExplore: () => void;
 }) {
-  const holdings = Object.keys(wallet.holdings).map((k) => {
-    const idx = Number(k);
-    const c = companies[idx];
-    const h = wallet.holdings[idx];
-    const avg = h.cost / h.shares;
-    const value = h.shares * c.price;
-    const pl = value - h.cost;
+  const holdings = Object.values(wallet.holdings).map((h) => {
+    const company = companies.find((c) => c.symbol === h.symbol);
+    const nowPrice = currentPriceFor(h.symbol, h.avgPrice);
+    const value = h.quantity * nowPrice;
+    const pl = value - h.invested;
     const pc = vibeColors(pl > 1 ? "green" : pl < -1 ? "red" : "yellow");
+    const initial = h.name.trim().charAt(0).toUpperCase() || "?";
     return {
-      key: idx,
-      name: c.name,
-      logo: c.logo,
-      logoBg: c.logoBg,
-      logoColor: c.logoColor,
-      sharesLabel: `${h.shares} ${h.shares === 1 ? "share" : "shares"}`,
-      avgLabel: `₹${fmt(Math.round(avg))}`,
-      nowLabel: `₹${fmt(c.price)}`,
+      key: h.symbol,
+      name: h.name,
+      logo: company?.logo ?? initial,
+      logoBg: company?.logoBg ?? "#EDE7DA",
+      logoColor: company?.logoColor ?? "#6A6155",
+      sharesLabel: `${h.quantity} ${h.quantity === 1 ? "share" : "shares"}`,
+      avgLabel: `₹${fmt(Math.round(h.avgPrice))}`,
+      nowLabel: `₹${fmt(Math.round(nowPrice))}`,
       valueLabel: `₹${fmt(Math.round(value))}`,
       plLabel: `${pl >= 0 ? "▲ +₹" : "▼ ₹"}${fmt(Math.abs(Math.round(pl)))} on paper`,
       plBg: pc.bg,
@@ -36,8 +43,8 @@ export default function TradeScreen({
     };
   });
 
-  const investedValue = Object.keys(wallet.holdings).reduce(
-    (a, k) => a + wallet.holdings[Number(k)].shares * companies[Number(k)].price,
+  const investedValue = Object.values(wallet.holdings).reduce(
+    (a, h) => a + h.quantity * currentPriceFor(h.symbol, h.avgPrice),
     0
   );
   const total = wallet.cash + investedValue;

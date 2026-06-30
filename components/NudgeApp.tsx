@@ -7,12 +7,13 @@ import HomeScreen from "@/components/screens/HomeScreen";
 import ExploreScreen from "@/components/screens/ExploreScreen";
 import AboutScreen from "@/components/screens/AboutScreen";
 import TradeScreen from "@/components/screens/TradeScreen";
-import type { Screen, Wallet } from "@/lib/nudge-types";
+import type { Screen } from "@/lib/nudge-types";
+import { companies } from "@/lib/nudge-data";
+import { buyShares, loadWallet, persistWallet, resetWallet as resetWalletData } from "@/lib/wallet";
+import type { Wallet } from "@/lib/wallet";
 
 const ACCENT = "#4F9D69";
 const RADIUS = 24;
-const WALLET_STORAGE_KEY = "nudge_wallet_v1";
-const EMPTY_WALLET: Wallet = { cash: 10000, holdings: {} };
 
 export default function NudgeApp() {
   const [screen, setScreen] = useState<Screen>("home");
@@ -20,27 +21,7 @@ export default function NudgeApp() {
   const [amount, setAmount] = useState(500);
   const [openStat, setOpenStat] = useState<string | null>(null);
   const [walkStep, setWalkStep] = useState(0);
-  const [wallet, setWallet] = useState<Wallet>(() => {
-    if (typeof window === "undefined") return EMPTY_WALLET;
-    try {
-      const raw = localStorage.getItem(WALLET_STORAGE_KEY);
-      if (raw) {
-        const w = JSON.parse(raw);
-        if (w && typeof w.cash === "number" && w.holdings) return w;
-      }
-    } catch {
-      // ignore corrupt local storage
-    }
-    return EMPTY_WALLET;
-  });
-
-  const persist = (w: Wallet) => {
-    try {
-      localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(w));
-    } catch {
-      // ignore write failures (e.g. private browsing)
-    }
-  };
+  const [wallet, setWallet] = useState<Wallet>(() => loadWallet());
 
   const goTo = (next: Screen) => {
     setScreen(next);
@@ -65,20 +46,10 @@ export default function NudgeApp() {
   };
 
   const confirmBuy = (price: number) => {
-    const shares = Math.floor(amount / price);
-    if (shares < 1) return;
-    const cost = shares * price;
-    if (wallet.cash < cost) return;
-    const cur = wallet.holdings[companyIdx] || { shares: 0, cost: 0 };
-    const holdings = {
-      ...wallet.holdings,
-      [companyIdx]: { shares: cur.shares + shares, cost: cur.cost + cost },
-    };
-    const next: Wallet = {
-      cash: Math.round((wallet.cash - cost) * 100) / 100,
-      holdings,
-    };
-    persist(next);
+    const company = companies[companyIdx];
+    const next = buyShares(wallet, company, amount, price);
+    if (next === wallet) return; // order couldn't be filled — no-op
+    persistWallet(next);
     setWallet(next);
     setWalkStep(99);
   };
@@ -90,8 +61,7 @@ export default function NudgeApp() {
       )
     )
       return;
-    persist(EMPTY_WALLET);
-    setWallet(EMPTY_WALLET);
+    setWallet(resetWalletData());
   };
 
   return (
