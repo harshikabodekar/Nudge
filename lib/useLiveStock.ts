@@ -50,7 +50,9 @@ export function useLiveStock(symbol: string): LiveStockState {
   const [, forceRender] = useState(0);
 
   useEffect(() => {
-    if (sessionCache.has(symbol)) return;
+    // Empty symbol means "nothing selected yet" (e.g. Trade screen's order
+    // panel before a company is picked) — nothing to fetch.
+    if (!symbol || sessionCache.has(symbol)) return;
 
     let cancelled = false;
     fetchAndCache(symbol).then(() => {
@@ -62,5 +64,6 @@ export function useLiveStock(symbol: string): LiveStockState {
     };
   }, [symbol]);
 
+  if (!symbol) return { data: null, status: "unavailable" };
   return stateFor(symbol);
 }

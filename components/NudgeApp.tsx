@@ -9,7 +9,7 @@ import AboutScreen from "@/components/screens/AboutScreen";
 import TradeScreen from "@/components/screens/TradeScreen";
 import type { Screen } from "@/lib/nudge-types";
 import { companies } from "@/lib/nudge-data";
-import { buyShares, loadWallet, persistWallet, resetWallet as resetWalletData } from "@/lib/wallet";
+import { buyShares, loadWallet, persistWallet, resetWallet as resetWalletData, sellShares } from "@/lib/wallet";
 import type { Wallet } from "@/lib/wallet";
 
 const ACCENT = "#4F9D69";
@@ -47,11 +47,30 @@ export default function NudgeApp() {
 
   const confirmBuy = (price: number) => {
     const company = companies[companyIdx];
-    const next = buyShares(wallet, company, amount, price);
+    const quantity = Math.floor(amount / price);
+    const next = buyShares(wallet, company, quantity, price);
     if (next === wallet) return; // order couldn't be filled — no-op
     persistWallet(next);
     setWallet(next);
     setWalkStep(99);
+  };
+
+  // Used by the Trade screen's order panel — any company (preset or
+  // searched), quantity entered directly rather than derived from a ₹ amount.
+  const handleBuy = (symbol: string, name: string, quantity: number, price: number): boolean => {
+    const next = buyShares(wallet, { symbol, name }, quantity, price);
+    if (next === wallet) return false;
+    persistWallet(next);
+    setWallet(next);
+    return true;
+  };
+
+  const handleSell = (symbol: string, quantity: number, price: number): boolean => {
+    const next = sellShares(wallet, symbol, quantity, price);
+    if (next === wallet) return false;
+    persistWallet(next);
+    setWallet(next);
+    return true;
   };
 
   const resetWallet = () => {
@@ -107,6 +126,8 @@ export default function NudgeApp() {
       {screen === "trade" && (
         <TradeScreen
           wallet={wallet}
+          onBuy={handleBuy}
+          onSell={handleSell}
           onReset={resetWallet}
           onExplore={() => goTo("explore")}
         />

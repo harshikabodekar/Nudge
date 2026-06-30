@@ -135,18 +135,19 @@ export function resetWallet(): Wallet {
 
 /**
  * Applies a buy to a wallet and returns the next state. Returns the same
- * wallet reference unchanged if the order can't be filled (amount doesn't
- * cover one share, or insufficient cash) — callers can compare `=== wallet`
- * to detect a no-op.
+ * wallet reference unchanged if the order can't be filled (quantity < 1,
+ * bad price, or insufficient cash) — callers can compare `=== wallet` to
+ * detect a no-op.
  */
 export function buyShares(
   wallet: Wallet,
   company: { symbol: string; name: string },
-  amount: number,
+  quantity: number,
   price: number
 ): Wallet {
-  const quantity = Math.floor(amount / price);
-  if (quantity < 1) return wallet;
+  if (!Number.isFinite(quantity) || quantity < 1 || !Number.isFinite(price) || price <= 0) {
+    return wallet;
+  }
   const cost = quantity * price;
   if (wallet.cash < cost) return wallet;
 
@@ -167,6 +168,51 @@ export function buyShares(
 
   return {
     cash: Math.round((wallet.cash - cost) * 100) / 100,
+    holdings,
+  };
+}
+
+/**
+ * Applies a sell to a wallet and returns the next state. Returns the same
+ * wallet reference unchanged if the order can't be filled (nothing held,
+ * quantity < 1, more than currently held, or bad price) — callers can
+ * compare `=== wallet` to detect a no-op (e.g. an oversell attempt).
+ *
+ * Selling reduces the holding's invested (cost-basis) amount proportionally
+ * to the quantity sold, keeping avgPrice unchanged for whatever remains —
+ * the standard "average cost basis" approach, so partial sells don't distort
+ * the average price of the shares still held.
+ */
+export function sellShares(wallet: Wallet, symbol: string, quantity: number, price: number): Wallet {
+  const existing = wallet.holdings[symbol];
+  if (
+    !existing ||
+    !Number.isFinite(quantity) ||
+    quantity < 1 ||
+    quantity > existing.quantity ||
+    !Number.isFinite(price) ||
+    price <= 0
+  ) {
+    return wallet;
+  }
+
+  const proceeds = quantity * price;
+  const remainingQuantity = existing.quantity - quantity;
+  const costBasisSold = existing.avgPrice * quantity;
+
+  const holdings: Record<string, Holding> = { ...wallet.holdings };
+  if (remainingQuantity <= 0) {
+    delete holdings[symbol];
+  } else {
+    holdings[symbol] = {
+      ...existing,
+      quantity: remainingQuantity,
+      invested: Math.max(0, existing.invested - costBasisSold),
+    };
+  }
+
+  return {
+    cash: Math.round((wallet.cash + proceeds) * 100) / 100,
     holdings,
   };
 }

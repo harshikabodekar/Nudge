@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { companies, fmt, formatMarketCapINR, vibeColors, type Row, type Stat, type Vibe } from "@/lib/nudge-data";
 import { useLiveStock } from "@/lib/useLiveStock";
-import { useSymbolSearch } from "@/lib/useSymbolSearch";
+import CompanySearchInput from "@/components/CompanySearchInput";
+import TappableTerms from "@/components/TappableTerms";
 import type { SymbolSearchResult } from "@/lib/yahooFinance";
 
 interface ExploreScreenProps {
@@ -105,9 +106,6 @@ export default function ExploreScreen({
   const presetCompany = companies[companyIdx] ?? companies[0];
   const [searchedCompany, setSearchedCompany] = useState<SymbolSearchResult | null>(null);
   const [searchQuery, setSearchQuery] = useState(presetCompany.name);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const { results: searchResults, status: searchStatus } = useSymbolSearch(searchQuery);
 
   const selected: SelectedView = searchedCompany
     ? searchedToSelected(searchedCompany)
@@ -143,8 +141,6 @@ export default function ExploreScreen({
     low: live.data?.week52Low != null ? `₹${fmt(Math.round(live.data.week52Low))}` : undefined,
   };
 
-  const openStatObj = selected.stats.find((s) => s.key === openStat) ?? null;
-
   const walkMap: Record<number, { n: string; title: string; body: string }> = {
     1: {
       n: "1",
@@ -170,14 +166,9 @@ export default function ExploreScreen({
   const walk = walkMap[walkStep] ?? walkMap[1];
   const walkDoneBody = `You practice-bought ${simShares} ${sWord} of ${selected.name}. It’s sitting in your wallet now.`;
 
-  const closeDropdownSoon = () => {
-    setTimeout(() => setDropdownOpen(false), 150);
-  };
-
   const pickPreset = (i: number) => {
     setSearchedCompany(null);
     setSearchQuery(companies[i].name);
-    setDropdownOpen(false);
     onSelectCompany(i);
   };
 
@@ -195,11 +186,8 @@ export default function ExploreScreen({
     }
     setSearchedCompany(result);
     setSearchQuery(result.name);
-    setDropdownOpen(false);
     onResetSelection();
   };
-
-  const showDropdown = dropdownOpen && searchQuery.trim().length >= 2;
 
   return (
     <main
@@ -232,129 +220,8 @@ export default function ExploreScreen({
         Pick one you&apos;ve heard of. We&apos;ll break it down — no jargon.
       </p>
 
-      <div style={{ position: "relative", marginBottom: 16 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            background: "#FFFDF9",
-            border: "1.5px solid rgba(120,105,80,.16)",
-            borderRadius: 999,
-            padding: "6px 8px 6px 20px",
-            boxShadow: "0 10px 30px -18px rgba(80,65,40,.4)",
-          }}
-        >
-          <span style={{ fontSize: 18, color: "#B3A998" }}>⌕</span>
-          <input
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setDropdownOpen(true);
-            }}
-            onFocus={() => setDropdownOpen(true)}
-            onBlur={closeDropdownSoon}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && searchResults.length > 0) {
-                pickSearchResult(searchResults[0]);
-              }
-              if (e.key === "Escape") {
-                setDropdownOpen(false);
-                e.currentTarget.blur();
-              }
-            }}
-            placeholder="search any company..."
-            style={{
-              flex: 1,
-              border: "none",
-              outline: "none",
-              background: "none",
-              fontFamily: "var(--font-nunito), sans-serif",
-              fontSize: 17,
-              fontWeight: 600,
-              color: "#36302A",
-              padding: "12px 0",
-            }}
-          />
-          <button
-            onClick={() => setDropdownOpen(true)}
-            style={{
-              fontFamily: "var(--font-quicksand), sans-serif",
-              fontWeight: 700,
-              fontSize: 15,
-              color: "#fff",
-              background: "var(--accent, #4F9D69)",
-              border: "none",
-              cursor: "pointer",
-              padding: "12px 22px",
-              borderRadius: 999,
-            }}
-          >
-            Search
-          </button>
-        </div>
-
-        {showDropdown && (
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              left: 0,
-              right: 0,
-              zIndex: 20,
-              background: "#FFFDF9",
-              border: "1px solid rgba(120,105,80,.16)",
-              borderRadius: 18,
-              boxShadow: "0 18px 40px -20px rgba(80,65,40,.45)",
-              overflow: "hidden",
-            }}
-          >
-            {searchStatus === "loading" && (
-              <div style={{ padding: "14px 18px", fontSize: 14, fontWeight: 600, color: "#9A907E" }}>
-                searching…
-              </div>
-            )}
-            {searchStatus === "error" && (
-              <div style={{ padding: "14px 18px", fontSize: 14, fontWeight: 600, color: "#9A907E" }}>
-                search isn&apos;t working right now — try the picks below.
-              </div>
-            )}
-            {searchStatus === "ready" && searchResults.length === 0 && (
-              <div style={{ padding: "14px 18px", fontSize: 14, fontWeight: 600, color: "#9A907E" }}>{`no matches for "${searchQuery.trim()}" — try a different name, or pick one below.`}</div>
-            )}
-            {searchStatus === "ready" &&
-              searchResults.map((result) => (
-                <button
-                  key={result.symbol}
-                  // Keep the input focused on mousedown (no blur at all for
-                  // this interaction) so there's no race between the
-                  // blur-triggered dropdown-close timer and the click that
-                  // actually picks this result.
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => pickSearchResult(result)}
-                  style={{
-                    display: "flex",
-                    width: "100%",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    padding: "12px 18px",
-                    border: "none",
-                    borderBottom: "1px solid rgba(120,105,80,.08)",
-                    background: "none",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    fontFamily: "var(--font-nunito), sans-serif",
-                  }}
-                >
-                  <span style={{ fontWeight: 700, fontSize: 15, color: "#36302A" }}>{result.name}</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: "#A89E8B", flex: "none" }}>
-                    {result.symbol}
-                  </span>
-                </button>
-              ))}
-          </div>
-        )}
+      <div style={{ marginBottom: 16 }}>
+        <CompanySearchInput query={searchQuery} onQueryChange={setSearchQuery} onPick={pickSearchResult} />
       </div>
 
       <div
@@ -650,107 +517,11 @@ export default function ExploreScreen({
             tap any to learn what it means
           </span>
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(118px, 1fr))",
-            gap: 10,
-          }}
-        >
-          {selected.stats.map((stat) => {
-            const active = openStat === stat.key;
-            const displayValue = liveStatValues[stat.key] ?? stat.value;
-            return (
-              <button
-                key={stat.key}
-                onClick={() => onToggleStat(stat.key)}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 3,
-                  alignItems: "flex-start",
-                  textAlign: "left",
-                  cursor: "pointer",
-                  padding: "13px 15px",
-                  borderRadius: 16,
-                  fontFamily: "var(--font-nunito), sans-serif",
-                  transition: "all .16s ease",
-                  background: active
-                    ? "color-mix(in srgb, var(--accent, #4F9D69) 13%, #fff)"
-                    : "#FBF7EF",
-                  border: `1.5px solid ${
-                    active
-                      ? "color-mix(in srgb, var(--accent, #4F9D69) 48%, transparent)"
-                      : "rgba(120,105,80,.16)"
-                  }`,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    letterSpacing: ".4px",
-                    textTransform: "uppercase",
-                    color: "#A89E8B",
-                  }}
-                >
-                  {stat.label}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "var(--font-quicksand), sans-serif",
-                    fontWeight: 700,
-                    fontSize: 20,
-                    color: "#2B2620",
-                  }}
-                >
-                  {displayValue}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        {openStatObj && (
-          <div
-            style={{
-              marginTop: 14,
-              display: "flex",
-              gap: 11,
-              alignItems: "flex-start",
-              padding: "15px 16px",
-              background: "color-mix(in srgb, var(--accent, #4F9D69) 10%, #fff)",
-              border: "1px solid color-mix(in srgb, var(--accent, #4F9D69) 22%, transparent)",
-              borderRadius: 16,
-              animation: "bubbleIn .3s ease both",
-            }}
-          >
-            <span style={{ fontSize: 18 }}>💡</span>
-            <div>
-              <div
-                style={{
-                  fontFamily: "var(--font-quicksand), sans-serif",
-                  fontWeight: 700,
-                  fontSize: 14,
-                  color: "color-mix(in srgb, var(--accent, #4F9D69) 80%, #2B2620)",
-                  marginBottom: 3,
-                }}
-              >
-                {openStatObj.label}
-              </div>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 15.5,
-                  lineHeight: 1.5,
-                  fontWeight: 500,
-                  color: "#4A4339",
-                }}
-              >
-                {openStatObj.explain}
-              </p>
-            </div>
-          </div>
-        )}
+        <TappableTerms
+          terms={selected.stats.map((stat) => ({ ...stat, value: liveStatValues[stat.key] ?? stat.value }))}
+          activeKey={openStat}
+          onToggle={onToggleStat}
+        />
       </section>
 
       {/* ₹ simulator */}
