@@ -6,7 +6,9 @@ import { useLiveStock } from "@/lib/useLiveStock";
 import CompanySearchInput from "@/components/CompanySearchInput";
 import Tooltip from "@/components/Tooltip";
 import HoldingRow from "@/components/screens/trade/HoldingRow";
+import GoalProgress from "@/components/screens/trade/GoalProgress";
 import type { Wallet } from "@/lib/wallet";
+import type { Goal } from "@/lib/goal";
 import type { SymbolSearchResult } from "@/lib/yahooFinance";
 
 type Tab = "buy" | "sell";
@@ -35,12 +37,14 @@ function TermLabel({ text }: { text: string }) {
 
 export default function TradeScreen({
   wallet,
+  goal,
   onBuy,
   onSell,
   onReset,
   onExplore,
 }: {
   wallet: Wallet;
+  goal: Goal | null;
   onBuy: (symbol: string, name: string, quantity: number, price: number) => boolean;
   onSell: (symbol: string, quantity: number, price: number) => boolean;
   onReset: () => void;
@@ -352,6 +356,8 @@ export default function TradeScreen({
           </Tooltip>
         </div>
       </div>
+
+      {goal && <GoalProgress goal={goal} totalValue={total} />}
 
       {/* Order panel */}
       <section

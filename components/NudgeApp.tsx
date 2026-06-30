@@ -8,6 +8,7 @@ import ExploreScreen from "@/components/screens/ExploreScreen";
 import AboutScreen from "@/components/screens/AboutScreen";
 import TradeScreen from "@/components/screens/TradeScreen";
 import GoalOnboardingScreen from "@/components/screens/GoalOnboardingScreen";
+import GoalBanner from "@/components/GoalBanner";
 import type { Screen } from "@/lib/nudge-types";
 import { companies } from "@/lib/nudge-data";
 import { buyShares, loadWallet, persistWallet, resetWallet as resetWalletData, sellShares } from "@/lib/wallet";
@@ -134,6 +135,10 @@ export default function NudgeApp() {
         <>
           <NudgeHeader screen={screen} onNavigate={goTo} />
 
+          {goal && (screen === "explore" || screen === "trade") && (
+            <GoalBanner goal={goal} onChangeGoal={handleChangeGoal} />
+          )}
+
           {screen === "home" && <HomeScreen onExplore={() => goTo("explore")} />}
 
           {screen === "explore" && (
@@ -141,6 +146,7 @@ export default function NudgeApp() {
               companyIdx={companyIdx}
               onSelectCompany={selectCompany}
               onResetSelection={resetSelection}
+              goal={goal}
               amount={amount}
               onAmountChange={setAmount}
               openStat={openStat}
@@ -162,6 +168,7 @@ export default function NudgeApp() {
           {screen === "trade" && (
             <TradeScreen
               wallet={wallet}
+              goal={goal}
               onBuy={handleBuy}
               onSell={handleSell}
               onReset={resetWallet}

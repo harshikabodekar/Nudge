@@ -6,11 +6,13 @@ import { useLiveStock } from "@/lib/useLiveStock";
 import CompanySearchInput from "@/components/CompanySearchInput";
 import TappableTerms from "@/components/TappableTerms";
 import type { SymbolSearchResult } from "@/lib/yahooFinance";
+import type { Goal } from "@/lib/goal";
 
 interface ExploreScreenProps {
   companyIdx: number;
   onSelectCompany: (i: number) => void;
   onResetSelection: () => void;
+  goal: Goal | null;
   amount: number;
   onAmountChange: (n: number) => void;
   openStat: string | null;
@@ -91,6 +93,7 @@ export default function ExploreScreen({
   companyIdx,
   onSelectCompany,
   onResetSelection,
+  goal,
   amount,
   onAmountChange,
   openStat,
@@ -606,6 +609,19 @@ export default function ExploreScreen({
           <span>₹100</span>
           <span>₹5,000</span>
         </div>
+        {goal && (
+          <p
+            style={{
+              margin: "12px 0 0",
+              fontSize: 13.5,
+              fontWeight: 600,
+              color: "#9A907E",
+              lineHeight: 1.5,
+            }}
+          >
+            {`putting ₹${fmt(amount)} into ${selected.name} moves you toward your ${goal.label}.`}
+          </p>
+        )}
         {price === null ? (
           <div
             style={{
