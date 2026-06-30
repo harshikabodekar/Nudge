@@ -1,26 +1,63 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+* {
+  box-sizing: border-box;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f4eee3;
+}
+
+::placeholder {
+  color: #b3a998;
+  opacity: 1;
+}
+
+@keyframes nudgeRise {
+  from {
+    transform: translateY(12px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes bubbleIn {
+  from {
+    transform: translateY(7px) scale(0.985);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes softPulse {
+  from {
+    transform: scale(0.8);
+    opacity: 0.15;
+  }
+  to {
+    transform: scale(1.25);
+    opacity: 0.4;
+  }
+}
+
+.nudge-hero-cta {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.nudge-hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px color-mix(in srgb, var(--accent, #4f9d69) 45%, transparent);
+}
+
+@media (max-width: 760px) {
+  .nudge-hero-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }
