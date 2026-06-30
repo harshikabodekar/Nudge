@@ -30,7 +30,13 @@ const PROMISES = [
   },
 ];
 
-export default function AboutScreen({ onExplore }: { onExplore: () => void }) {
+export default function AboutScreen({
+  onExplore,
+  onChangeGoal,
+}: {
+  onExplore: () => void;
+  onChangeGoal: () => void;
+}) {
   return (
     <main
       style={{
@@ -227,6 +233,25 @@ export default function AboutScreen({ onExplore }: { onExplore: () => void }) {
         >
           Okay, I&apos;m ready — let&apos;s look at one &nbsp;→
         </button>
+        <div style={{ marginTop: 18 }}>
+          <button
+            onClick={onChangeGoal}
+            style={{
+              fontFamily: "var(--font-nunito), sans-serif",
+              fontWeight: 600,
+              fontSize: 13.5,
+              color: "#A89E8B",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
+            change my savings goal
+          </button>
+        </div>
       </div>
     </main>
   );

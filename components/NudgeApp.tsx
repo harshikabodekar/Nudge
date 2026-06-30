@@ -7,10 +7,12 @@ import HomeScreen from "@/components/screens/HomeScreen";
 import ExploreScreen from "@/components/screens/ExploreScreen";
 import AboutScreen from "@/components/screens/AboutScreen";
 import TradeScreen from "@/components/screens/TradeScreen";
+import GoalOnboardingScreen from "@/components/screens/GoalOnboardingScreen";
 import type { Screen } from "@/lib/nudge-types";
 import { companies } from "@/lib/nudge-data";
 import { buyShares, loadWallet, persistWallet, resetWallet as resetWalletData, sellShares } from "@/lib/wallet";
 import type { Wallet } from "@/lib/wallet";
+import { clearGoal, loadGoal, type Goal } from "@/lib/goal";
 
 const ACCENT = "#4F9D69";
 const RADIUS = 24;
@@ -22,9 +24,31 @@ export default function NudgeApp() {
   const [openStat, setOpenStat] = useState<string | null>(null);
   const [walkStep, setWalkStep] = useState(0);
   const [wallet, setWallet] = useState<Wallet>(() => loadWallet());
+  // Lazy-init from localStorage is safe here (same as wallet) because goal
+  // no longer gates the first-painted screen — the landing page always
+  // renders regardless of its value, so server/client can't disagree on
+  // the initial DOM. It only matters once the user tries to go to Explore.
+  const [goal, setGoal] = useState<Goal | null>(() => loadGoal());
+  const [showGoalCapture, setShowGoalCapture] = useState(false);
 
   const goTo = (next: Screen) => {
+    if (next === "explore" && !goal) {
+      // Ask what they're saving toward before showing any stock — triggered
+      // by the attempt to reach Explore, not as a gate in front of the app.
+      setShowGoalCapture(true);
+      return;
+    }
     setScreen(next);
+    window.scrollTo(0, 0);
+  };
+
+  const handleGoalComplete = (g: Goal) => {
+    // Set screen directly rather than via goTo() — goTo's gate check would
+    // still see the pre-update (null) goal from this render's closure and
+    // bounce straight back into goal capture.
+    setGoal(g);
+    setShowGoalCapture(false);
+    setScreen("explore");
     window.scrollTo(0, 0);
   };
 
@@ -83,6 +107,12 @@ export default function NudgeApp() {
     setWallet(resetWalletData());
   };
 
+  const handleChangeGoal = () => {
+    if (!window.confirm("Change your goal? You can set a new one right away.")) return;
+    clearGoal();
+    setGoal(null);
+  };
+
   return (
     <div
       style={
@@ -98,42 +128,50 @@ export default function NudgeApp() {
         } as React.CSSProperties
       }
     >
-      <NudgeHeader screen={screen} onNavigate={goTo} />
+      {showGoalCapture ? (
+        <GoalOnboardingScreen onComplete={handleGoalComplete} />
+      ) : (
+        <>
+          <NudgeHeader screen={screen} onNavigate={goTo} />
 
-      {screen === "home" && <HomeScreen onExplore={() => goTo("explore")} />}
+          {screen === "home" && <HomeScreen onExplore={() => goTo("explore")} />}
 
-      {screen === "explore" && (
-        <ExploreScreen
-          companyIdx={companyIdx}
-          onSelectCompany={selectCompany}
-          onResetSelection={resetSelection}
-          amount={amount}
-          onAmountChange={setAmount}
-          openStat={openStat}
-          onToggleStat={toggleStat}
-          walkStep={walkStep}
-          onOpenWalk={() => setWalkStep(1)}
-          onWalkNext={() => setWalkStep((s) => Math.min(4, s + 1))}
-          onWalkPrev={() => setWalkStep((s) => Math.max(1, s - 1))}
-          onCloseWalk={() => setWalkStep(0)}
-          onConfirmBuy={confirmBuy}
-          onGoTrade={() => goTo("trade")}
-        />
+          {screen === "explore" && (
+            <ExploreScreen
+              companyIdx={companyIdx}
+              onSelectCompany={selectCompany}
+              onResetSelection={resetSelection}
+              amount={amount}
+              onAmountChange={setAmount}
+              openStat={openStat}
+              onToggleStat={toggleStat}
+              walkStep={walkStep}
+              onOpenWalk={() => setWalkStep(1)}
+              onWalkNext={() => setWalkStep((s) => Math.min(4, s + 1))}
+              onWalkPrev={() => setWalkStep((s) => Math.max(1, s - 1))}
+              onCloseWalk={() => setWalkStep(0)}
+              onConfirmBuy={confirmBuy}
+              onGoTrade={() => goTo("trade")}
+            />
+          )}
+
+          {screen === "about" && (
+            <AboutScreen onExplore={() => goTo("explore")} onChangeGoal={handleChangeGoal} />
+          )}
+
+          {screen === "trade" && (
+            <TradeScreen
+              wallet={wallet}
+              onBuy={handleBuy}
+              onSell={handleSell}
+              onReset={resetWallet}
+              onExplore={() => goTo("explore")}
+            />
+          )}
+
+          <NudgeFooter />
+        </>
       )}
-
-      {screen === "about" && <AboutScreen onExplore={() => goTo("explore")} />}
-
-      {screen === "trade" && (
-        <TradeScreen
-          wallet={wallet}
-          onBuy={handleBuy}
-          onSell={handleSell}
-          onReset={resetWallet}
-          onExplore={() => goTo("explore")}
-        />
-      )}
-
-      <NudgeFooter />
     </div>
   );
 }
