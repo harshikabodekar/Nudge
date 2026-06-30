@@ -7,7 +7,6 @@ import HomeScreen from "@/components/screens/HomeScreen";
 import ExploreScreen from "@/components/screens/ExploreScreen";
 import AboutScreen from "@/components/screens/AboutScreen";
 import TradeScreen from "@/components/screens/TradeScreen";
-import { companies } from "@/lib/nudge-data";
 import type { Screen, Wallet } from "@/lib/nudge-types";
 
 const ACCENT = "#4F9D69";
@@ -58,9 +57,7 @@ export default function NudgeApp() {
     setOpenStat((cur) => (cur === key ? null : key));
   };
 
-  const confirmBuy = () => {
-    const sel = companies[companyIdx];
-    const price = sel.price;
+  const confirmBuy = (price: number) => {
     const shares = Math.floor(amount / price);
     if (shares < 1) return;
     const cost = shares * price;

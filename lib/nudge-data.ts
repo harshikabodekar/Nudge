@@ -15,12 +15,22 @@ export interface Row {
 
 export interface Company {
   name: string;
+  /**
+   * NSE symbol (Yahoo Finance ".NS" suffix) used to fetch live data.
+   * Zomato Limited legally renamed to Eternal Limited (ETERNAL.NS) in 2024;
+   * Tata Motors demerged in 2024 into separate commercial- and
+   * passenger-vehicle entities — TMPV.NS (Tata Motors Passenger Vehicles)
+   * is the successor matching this card's JLR/passenger-car narrative.
+   * The literal "ZOMATO.NS" / "TATAMOTORS.NS" tickers are delisted.
+   */
+  symbol: string;
   logo: string;
   logoBg: string;
   logoColor: string;
   sector: string;
   vibe: Vibe;
   vibeLabel: string;
+  /** Static reference price, used whenever live data is unavailable. */
   price: number;
   stats: Stat[];
   rows: Row[];
@@ -29,6 +39,7 @@ export interface Company {
 export const companies: Company[] = [
   {
     name: "Zomato",
+    symbol: "ETERNAL.NS",
     logo: "z",
     logoBg: "#FDEAE2",
     logoColor: "#D9603C",
@@ -96,6 +107,7 @@ export const companies: Company[] = [
   },
   {
     name: "Infosys",
+    symbol: "INFY.NS",
     logo: "i",
     logoBg: "#E3EEFB",
     logoColor: "#2F6BC4",
@@ -163,6 +175,7 @@ export const companies: Company[] = [
   },
   {
     name: "Tata Motors",
+    symbol: "TMPV.NS",
     logo: "t",
     logoBg: "#E6EFE7",
     logoColor: "#3E7D4F",
@@ -219,7 +232,7 @@ export const companies: Company[] = [
       {
         icon: "₹",
         label: "What ₹500 buys you",
-        text: "Around ₹950 a share, so ₹500 is about half a share if your app allows fractions — otherwise one to save up for.",
+        text: "₹500 goes further here than you'd expect — enough to actually own a piece, no saving up required.",
       },
       {
         icon: "👀",
@@ -240,3 +253,12 @@ export function vibeColors(vibe: Vibe) {
 }
 
 export const fmt = (n: number) => Number(n).toLocaleString("en-IN");
+
+/** Formats a raw rupee market-cap figure as "₹2.3L Cr" / "₹450 Cr", matching the static copy's style. */
+export function formatMarketCapINR(raw: number): string {
+  const crore = raw / 1e7;
+  if (crore >= 1e5) {
+    return `₹${(crore / 1e5).toFixed(1)}L Cr`;
+  }
+  return `₹${fmt(Math.round(crore))} Cr`;
+}

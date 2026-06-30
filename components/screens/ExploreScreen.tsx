@@ -1,6 +1,7 @@
 "use client";
 
-import { companies, fmt, vibeColors } from "@/lib/nudge-data";
+import { companies, fmt, formatMarketCapINR, vibeColors } from "@/lib/nudge-data";
+import { useLiveStock } from "@/lib/useLiveStock";
 
 interface ExploreScreenProps {
   companyIdx: number;
@@ -14,7 +15,7 @@ interface ExploreScreenProps {
   onWalkNext: () => void;
   onWalkPrev: () => void;
   onCloseWalk: () => void;
-  onConfirmBuy: () => void;
+  onConfirmBuy: (price: number) => void;
   onGoTrade: () => void;
 }
 
@@ -35,12 +36,20 @@ export default function ExploreScreen({
 }: ExploreScreenProps) {
   const sel = companies[companyIdx] ?? companies[0];
   const vc = vibeColors(sel.vibe);
-  const price = sel.price;
+  const live = useLiveStock(sel.symbol);
+  const price = live.data?.price ?? sel.price;
 
   const simShares = Math.floor(amount / price);
   const simInvested = simShares * price;
   const simEnough = simShares >= 1;
   const sWord = simShares === 1 ? "share" : "shares";
+
+  const liveStatValues: Partial<Record<string, string>> = {
+    pe: live.data?.peRatio != null ? String(Math.round(live.data.peRatio)) : undefined,
+    mcap: live.data?.marketCap != null ? formatMarketCapINR(live.data.marketCap) : undefined,
+    high: live.data?.week52High != null ? `₹${fmt(Math.round(live.data.week52High))}` : undefined,
+    low: live.data?.week52Low != null ? `₹${fmt(Math.round(live.data.week52Low))}` : undefined,
+  };
 
   const openStatObj = sel.stats.find((s) => s.key === openStat) ?? null;
 
@@ -253,6 +262,30 @@ export default function ExploreScreen({
               <div style={{ fontSize: 14, fontWeight: 600, color: "#9A907E" }}>
                 {sel.sector}
               </div>
+              {live.status === "ready" && live.data && (
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    marginTop: 3,
+                    color:
+                      live.data.changePercent != null
+                        ? live.data.changePercent >= 0
+                          ? "#36774A"
+                          : "#A8512F"
+                        : "#9A907E",
+                  }}
+                >{`₹${fmt(live.data.price)}${
+                  live.data.changePercent != null
+                    ? ` ${live.data.changePercent >= 0 ? "▲" : "▼"} ${Math.abs(live.data.changePercent).toFixed(2)}%`
+                    : ""
+                } · live`}</div>
+              )}
+              {live.status === "unavailable" && (
+                <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 3, color: "#B3A998" }}>
+                  live data unavailable — showing reference figures
+                </div>
+              )}
             </div>
           </div>
           {/* Vibe Meter */}
@@ -406,6 +439,7 @@ export default function ExploreScreen({
         >
           {sel.stats.map((stat) => {
             const active = openStat === stat.key;
+            const displayValue = liveStatValues[stat.key] ?? stat.value;
             return (
               <button
                 key={stat.key}
@@ -450,7 +484,7 @@ export default function ExploreScreen({
                     color: "#2B2620",
                   }}
                 >
-                  {stat.value}
+                  {displayValue}
                 </span>
               </button>
             );
@@ -828,7 +862,7 @@ export default function ExploreScreen({
               )}
               {walkStep === 4 && (
                 <button
-                  onClick={onConfirmBuy}
+                  onClick={() => onConfirmBuy(price)}
                   style={{
                     fontFamily: "var(--font-quicksand), sans-serif",
                     fontWeight: 700,
