@@ -53,6 +53,13 @@ export default function NudgeApp() {
     setOpenStat(null);
   };
 
+  // Same reset as selectCompany, without touching companyIdx — used when the
+  // user picks a searched (non-preset) company, which Explore tracks locally.
+  const resetSelection = () => {
+    setWalkStep(0);
+    setOpenStat(null);
+  };
+
   const toggleStat = (key: string) => {
     setOpenStat((cur) => (cur === key ? null : key));
   };
@@ -110,6 +117,7 @@ export default function NudgeApp() {
         <ExploreScreen
           companyIdx={companyIdx}
           onSelectCompany={selectCompany}
+          onResetSelection={resetSelection}
           amount={amount}
           onAmountChange={setAmount}
           openStat={openStat}

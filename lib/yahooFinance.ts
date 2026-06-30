@@ -4,6 +4,7 @@
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
+const YAHOO_SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search";
 
 // Yahoo's edge/CDN blocks requests with no User-Agent (confirmed: returns
 // "429 Too Many Requests" instantly, even on the very first request) — a
@@ -120,4 +121,87 @@ export async function getStockData(symbol: string): Promise<LiveStockData | null
 
   cache.set(symbol, { data, expiresAt: Date.now() + CACHE_TTL_MS });
   return data;
+}
+
+export interface SymbolSearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  sector: string | null;
+  industry: string | null;
+}
+
+interface YahooSearchQuote {
+  symbol?: string;
+  shortname?: string;
+  longname?: string;
+  quoteType?: string;
+  exchDisp?: string;
+  sector?: string;
+  industry?: string;
+}
+
+interface YahooSearchResponse {
+  quotes?: YahooSearchQuote[] | null;
+}
+
+async function fetchYahooSearch(query: string): Promise<YahooSearchResponse> {
+  const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0`;
+  const res = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(`Yahoo Finance search failed with status ${res.status}`);
+  }
+  return res.json();
+}
+
+// Yahoo only indexes companies by their CURRENT legal name, so a company
+// that renamed/demerged (see lib/nudge-data.ts) is unsearchable by the name
+// most people still know it by. Maps that commonly-known name to the term
+// that actually finds it. Lowercase, exact match on the full query — add
+// more entries here as they come up.
+const SEARCH_ALIASES: Record<string, string> = {
+  zomato: "eternal",
+};
+
+/**
+ * Looks up companies by free-text query via Yahoo's unofficial autocomplete
+ * endpoint, filtered to NSE (.NS) and BSE (.BO) equities so results stay
+ * India-focused. Returns an empty array on any failure (blocked, network
+ * error, no matches) rather than throwing — callers should treat "no
+ * results" and "search is down" the same way: show a clean empty state.
+ */
+export async function searchSymbols(query: string): Promise<SymbolSearchResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const effectiveQuery = SEARCH_ALIASES[trimmed.toLowerCase()] ?? trimmed;
+
+  let json: YahooSearchResponse;
+  try {
+    json = await fetchYahooSearch(effectiveQuery);
+  } catch {
+    return [];
+  }
+
+  const quotes = json.quotes ?? [];
+  const results: SymbolSearchResult[] = [];
+  for (const quote of quotes) {
+    if (
+      quote.quoteType !== "EQUITY" ||
+      typeof quote.symbol !== "string" ||
+      !(quote.symbol.endsWith(".NS") || quote.symbol.endsWith(".BO"))
+    ) {
+      continue;
+    }
+    results.push({
+      symbol: quote.symbol,
+      name: quote.longname || quote.shortname || quote.symbol,
+      exchange: quote.exchDisp ?? (quote.symbol.endsWith(".NS") ? "NSE" : "BSE"),
+      sector: quote.sector ?? null,
+      industry: quote.industry ?? null,
+    });
+  }
+  return results.slice(0, 8);
 }
