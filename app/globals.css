@@ -115,3 +115,56 @@ body {
   visibility: visible;
   transform: translate(-50%, 0);
 }
+
+/* ── Mobile tooltip: appear below the trigger, left-anchored ─────────────
+   At 375px a centered-above bubble overflows the screen on left-edge
+   triggers (Qty, P&L, LTP). Moving it below and anchoring to left: 0
+   keeps it within the content area. max-width clamps to viewport width.  */
+@media (max-width: 640px) {
+  .nudge-tooltip-bubble {
+    bottom: auto;
+    top: calc(100% + 8px);
+    left: 0;
+    right: auto;
+    transform: translateY(4px);
+    max-width: min(260px, calc(100vw - 48px));
+  }
+  .nudge-tooltip--open .nudge-tooltip-bubble {
+    transform: none;
+  }
+}
+@media (max-width: 640px) and (hover: hover) {
+  .nudge-tooltip:hover .nudge-tooltip-bubble {
+    transform: none;
+  }
+}
+
+/* ── Nav button base styles (responsive; static props extracted from inline) */
+.nudge-nav-btn {
+  font-family: var(--font-quicksand), sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  padding: 9px 16px;
+  border-radius: 999px;
+  min-height: 44px;
+  transition: background 0.18s ease;
+}
+
+/* At 480px the four nav labels ("Home Explore About Trade") plus logo
+   don't fit at default size — shrink text + padding, hide the wordmark. */
+@media (max-width: 480px) {
+  .nudge-nav-btn {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  .nudge-wordmark {
+    display: none;
+  }
+}
+
+/* ── Preset company chip tap target ────────────────────────────────────── */
+.nudge-preset-chip {
+  min-height: 44px;
+}

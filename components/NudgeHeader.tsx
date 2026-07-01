@@ -69,6 +69,7 @@ export default function NudgeHeader({
             n
           </span>
           <span
+            className="nudge-wordmark"
             style={{
               fontWeight: 700,
               fontSize: 22,
@@ -86,15 +87,8 @@ export default function NudgeHeader({
               <button
                 key={item.key}
                 onClick={() => onNavigate(item.key)}
+                className="nudge-nav-btn"
                 style={{
-                  fontFamily: "var(--font-quicksand), sans-serif",
-                  fontWeight: 600,
-                  fontSize: 15,
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "9px 16px",
-                  borderRadius: 999,
-                  transition: "background .18s ease",
                   background: active
                     ? "color-mix(in srgb, var(--accent, #4F9D69) 16%, #fff)"
                     : "transparent",

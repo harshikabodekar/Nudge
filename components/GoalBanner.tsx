@@ -12,6 +12,8 @@ export default function GoalBanner({ goal, onChangeGoal }: { goal: Goal; onChang
         width: "100%",
         alignItems: "center",
         justifyContent: "center",
+        flexWrap: "wrap",
+        minHeight: 44,
         gap: 8,
         background: "color-mix(in srgb, var(--accent, #4F9D69) 9%, #FFFDF9)",
         borderWidth: "0 0 1px 0",
@@ -28,11 +30,16 @@ export default function GoalBanner({ goal, onChangeGoal }: { goal: Goal; onChang
           fontWeight: 700,
           fontSize: 13.5,
           color: "color-mix(in srgb, var(--accent, #4F9D69) 78%, #2E2922)",
+          minWidth: 0,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          flexShrink: 1,
         }}
       >
         {`🎯 Saving toward: ${goal.label} · ₹${fmt(goal.targetAmount)}`}
       </span>
-      <span style={{ fontSize: 12, fontWeight: 700, color: "#A89E8B", textDecoration: "underline", textUnderlineOffset: 2 }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: "#A89E8B", textDecoration: "underline", textUnderlineOffset: 2, flexShrink: 0 }}>
         change
       </span>
     </button>

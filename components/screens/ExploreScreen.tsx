@@ -258,6 +258,7 @@ export default function ExploreScreen({
             <button
               key={c.name}
               onClick={() => pickPreset(i)}
+              className="nudge-preset-chip"
               style={{
                 fontFamily: "var(--font-nunito), sans-serif",
                 fontWeight: 700,

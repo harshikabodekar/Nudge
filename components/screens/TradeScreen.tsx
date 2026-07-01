@@ -306,6 +306,7 @@ export default function TradeScreen({
                 display: "inline-flex",
                 padding: "7px 14px",
                 borderRadius: 999,
+                maxWidth: "100%",
                 background: "#E9F4EC",
                 color: "#36774A",
                 fontFamily: "var(--font-quicksand), sans-serif",
@@ -322,6 +323,7 @@ export default function TradeScreen({
                 display: "inline-flex",
                 padding: "7px 14px",
                 borderRadius: 999,
+                maxWidth: "100%",
                 background: "#FBECE4",
                 color: "#A8512F",
                 fontFamily: "var(--font-quicksand), sans-serif",
@@ -338,6 +340,7 @@ export default function TradeScreen({
                 display: "inline-flex",
                 padding: "7px 14px",
                 borderRadius: 999,
+                maxWidth: "100%",
                 background: "#F1ECE1",
                 color: "#8A8072",
                 fontFamily: "var(--font-quicksand), sans-serif",
@@ -395,6 +398,7 @@ export default function TradeScreen({
               <button
                 key={c.symbol}
                 onClick={() => handlePresetPick(c.symbol, c.name)}
+                className="nudge-preset-chip"
                 style={{
                   fontFamily: "var(--font-nunito), sans-serif",
                   fontWeight: 700,
@@ -606,7 +610,7 @@ export default function TradeScreen({
             {/* Order type */}
             <div style={{ marginTop: 18 }}>
               <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", minHeight: 44 }}>
                   <input
                     type="radio"
                     checked={orderType === "market"}
@@ -636,7 +640,7 @@ export default function TradeScreen({
                     </span>
                   </Tooltip>
                 </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", minHeight: 44 }}>
                   <input
                     type="radio"
                     checked={orderType === "limit"}
