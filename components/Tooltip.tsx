@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { markConceptLearned } from "@/lib/learned";
 
 /**
  * Wraps a term so its plain-language explainer appears instantly on hover
@@ -12,17 +13,24 @@ export default function Tooltip({
   label,
   explain,
   children,
+  conceptId,
 }: {
   label: string;
   explain: string;
   children: ReactNode;
+  conceptId?: string;
 }) {
   const [open, setOpen] = useState(false);
+
+  const trackLearned = () => {
+    if (conceptId) markConceptLearned(conceptId);
+  };
 
   return (
     <span
       className={`nudge-tooltip${open ? " nudge-tooltip--open" : ""}`}
-      onClick={() => setOpen((o) => !o)}
+      onClick={() => { trackLearned(); setOpen((o) => !o); }}
+      onMouseEnter={trackLearned}
     >
       {children}
       <span className="nudge-tooltip-bubble" role="tooltip">

@@ -7,6 +7,7 @@ import CompanySearchInput from "@/components/CompanySearchInput";
 import TappableTerms from "@/components/TappableTerms";
 import type { SymbolSearchResult } from "@/lib/yahooFinance";
 import type { Goal } from "@/lib/goal";
+import { markConceptLearned } from "@/lib/learned";
 
 interface ExploreScreenProps {
   companyIdx: number;
@@ -168,6 +169,11 @@ export default function ExploreScreen({
   };
   const walk = walkMap[walkStep] ?? walkMap[1];
   const walkDoneBody = `You practice-bought ${simShares} ${sWord} of ${selected.name}. It’s sitting in your wallet now.`;
+
+  const handleToggleStat = (key: string) => {
+    markConceptLearned(key);
+    onToggleStat(key);
+  };
 
   const pickPreset = (i: number) => {
     setSearchedCompany(null);
@@ -523,7 +529,7 @@ export default function ExploreScreen({
         <TappableTerms
           terms={selected.stats.map((stat) => ({ ...stat, value: liveStatValues[stat.key] ?? stat.value }))}
           activeKey={openStat}
-          onToggle={onToggleStat}
+          onToggle={handleToggleStat}
         />
       </section>
 

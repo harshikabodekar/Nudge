@@ -351,6 +351,7 @@ export default function TradeScreen({
           <Tooltip
             label="P&L"
             explain='short for "profit and loss" — how much more (or less) your shares are worth right now than what you paid for them.'
+            conceptId="pnl"
           >
             <TermLabel text="P&L" />
           </Tooltip>
@@ -511,7 +512,7 @@ export default function TradeScreen({
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {orderTerms.map((term) => (
-                <Tooltip key={term.key} label={term.label} explain={term.explain}>
+                <Tooltip key={term.key} label={term.label} explain={term.explain} conceptId={term.key}>
                   <div
                     style={{
                       display: "flex",
@@ -560,6 +561,7 @@ export default function TradeScreen({
                 <Tooltip
                   label="Qty"
                   explain="how many shares you want to buy or sell. whole numbers only — no fractional shares here."
+                  conceptId="qty"
                 >
                   <TermLabel text="Qty" />
                 </Tooltip>
@@ -614,6 +616,7 @@ export default function TradeScreen({
                   <Tooltip
                     label="Market order"
                     explain="buy or sell right now, at whatever the current price is. instant and simple — what most beginners use."
+                    conceptId="market"
                   >
                     <span
                       style={{
@@ -646,6 +649,7 @@ export default function TradeScreen({
                   <Tooltip
                     label="Limit order"
                     explain="you name the exact price you're willing to trade at, instead of taking the market price. in real apps this waits until the market reaches your price — here it fills right away at your price, just so you can see how the math works."
+                    conceptId="limit"
                   >
                     <span
                       style={{

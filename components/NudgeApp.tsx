@@ -8,12 +8,14 @@ import ExploreScreen from "@/components/screens/ExploreScreen";
 import AboutScreen from "@/components/screens/AboutScreen";
 import TradeScreen from "@/components/screens/TradeScreen";
 import GoalOnboardingScreen from "@/components/screens/GoalOnboardingScreen";
+import GuidedJourneyScreen from "@/components/screens/GuidedJourneyScreen";
 import GoalBanner from "@/components/GoalBanner";
 import type { Screen } from "@/lib/nudge-types";
 import { companies } from "@/lib/nudge-data";
 import { buyShares, loadWallet, persistWallet, resetWallet as resetWalletData, sellShares } from "@/lib/wallet";
 import type { Wallet } from "@/lib/wallet";
 import { clearGoal, loadGoal, type Goal } from "@/lib/goal";
+import { hasCompletedFirstTrade } from "@/lib/firstTrade";
 
 const ACCENT = "#4F9D69";
 const RADIUS = 24;
@@ -31,6 +33,7 @@ export default function NudgeApp() {
   // the initial DOM. It only matters once the user tries to go to Explore.
   const [goal, setGoal] = useState<Goal | null>(() => loadGoal());
   const [showGoalCapture, setShowGoalCapture] = useState(false);
+  const [showGuidedJourney, setShowGuidedJourney] = useState(false);
 
   const goTo = (next: Screen) => {
     if (next === "explore" && !goal) {
@@ -44,11 +47,24 @@ export default function NudgeApp() {
   };
 
   const handleGoalComplete = (g: Goal) => {
-    // Set screen directly rather than via goTo() — goTo's gate check would
-    // still see the pre-update (null) goal from this render's closure and
-    // bounce straight back into goal capture.
     setGoal(g);
     setShowGoalCapture(false);
+    if (!hasCompletedFirstTrade()) {
+      setShowGuidedJourney(true);
+    } else {
+      setScreen("explore");
+    }
+    window.scrollTo(0, 0);
+  };
+
+  const handleSkipGuided = () => {
+    setShowGuidedJourney(false);
+    setScreen("explore");
+    window.scrollTo(0, 0);
+  };
+
+  const handleCompleteGuided = () => {
+    setShowGuidedJourney(false);
     setScreen("explore");
     window.scrollTo(0, 0);
   };
@@ -131,6 +147,13 @@ export default function NudgeApp() {
     >
       {showGoalCapture ? (
         <GoalOnboardingScreen onComplete={handleGoalComplete} />
+      ) : showGuidedJourney && goal ? (
+        <GuidedJourneyScreen
+          goal={goal}
+          onSkip={handleSkipGuided}
+          onComplete={handleCompleteGuided}
+          onBuy={handleBuy}
+        />
       ) : (
         <>
           <NudgeHeader screen={screen} onNavigate={goTo} />

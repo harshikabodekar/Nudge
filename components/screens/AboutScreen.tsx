@@ -1,5 +1,7 @@
 "use client";
 
+import LearnedPanel from "@/components/LearnedPanel";
+
 const AUDIENCE = [
   {
     icon: "🎓",
@@ -214,7 +216,9 @@ export default function AboutScreen({
         ))}
       </div>
 
-      <div style={{ textAlign: "center" }}>
+      <LearnedPanel />
+
+      <div style={{ textAlign: "center", marginTop: 40 }}>
         <button
           onClick={onExplore}
           style={{
