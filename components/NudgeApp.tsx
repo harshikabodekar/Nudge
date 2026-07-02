@@ -33,8 +33,12 @@ export default function NudgeApp() {
   const [goal, setGoal] = useState<Goal | null>(() => loadGoal());
   const [showGoalCapture, setShowGoalCapture] = useState(false);
   const [showGuidedJourney, setShowGuidedJourney] = useState(false);
+  const [tradePreselect, setTradePreselect] = useState<{ symbol: string; name: string } | null>(null);
 
   const goTo = (next: Screen) => {
+    // Clear any pending trade preselect when navigating via normal nav.
+    // DecisionScreen's onGoTrade bypasses goTo and sets it directly.
+    setTradePreselect(null);
     if (next === "explore" && !goal) {
       setShowGoalCapture(true);
       return;
@@ -201,7 +205,11 @@ export default function NudgeApp() {
               searchedCompany={searchedCompany}
               goal={goal}
               onBack={() => { setScreen("explore"); window.scrollTo(0, 0); }}
-              onGoTrade={() => goTo("trade")}
+              onGoTrade={(symbol, name) => {
+                setTradePreselect({ symbol, name });
+                setScreen("trade");
+                window.scrollTo(0, 0);
+              }}
             />
           )}
 
@@ -209,6 +217,7 @@ export default function NudgeApp() {
             <TradeScreen
               wallet={wallet}
               goal={goal}
+              preselect={tradePreselect}
               onBuy={handleBuy}
               onSell={handleSell}
               onReset={resetWallet}

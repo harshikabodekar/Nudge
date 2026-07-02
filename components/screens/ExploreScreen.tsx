@@ -246,9 +246,10 @@ export default function ExploreScreen({
       </div>
 
       <div
+        className="nudge-scroll-x"
         style={{
           display: "flex",
-          flexWrap: "wrap",
+          flexWrap: "nowrap",
           gap: 9,
           marginBottom: 28,
         }}
@@ -260,6 +261,7 @@ export default function ExploreScreen({
             color: "#A89E8B",
             alignSelf: "center",
             marginRight: 2,
+            flexShrink: 0,
           }}
         >
           try:

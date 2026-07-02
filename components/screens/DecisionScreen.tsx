@@ -12,7 +12,7 @@ interface DecisionScreenProps {
   searchedCompany: SymbolSearchResult | null;
   goal: Goal | null;
   onBack: () => void;
-  onGoTrade: () => void;
+  onGoTrade: (symbol: string, name: string) => void;
 }
 
 function useStockHistory(symbol: string): PricePoint[] {
@@ -501,7 +501,7 @@ export default function DecisionScreen({
       {/* CTA row */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
         <button
-          onClick={onGoTrade}
+          onClick={() => onGoTrade(symbol, name)}
           style={{
             fontFamily: "var(--font-quicksand), sans-serif",
             fontWeight: 700,

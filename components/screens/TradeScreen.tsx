@@ -40,6 +40,7 @@ function TermLabel({ text }: { text: string }) {
 export default function TradeScreen({
   wallet,
   goal,
+  preselect,
   onBuy,
   onSell,
   onReset,
@@ -47,14 +48,15 @@ export default function TradeScreen({
 }: {
   wallet: Wallet;
   goal: Goal | null;
+  preselect?: { symbol: string; name: string } | null;
   onBuy: (symbol: string, name: string, quantity: number, price: number) => boolean;
   onSell: (symbol: string, quantity: number, price: number) => boolean;
   onReset: () => void;
   onExplore: () => void;
 }) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
-  const [selectedName, setSelectedName] = useState("");
+  const [searchQuery, setSearchQuery] = useState(preselect?.name ?? "");
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(preselect?.symbol ?? null);
+  const [selectedName, setSelectedName] = useState(preselect?.name ?? "");
   const [tab, setTab] = useState<Tab>("buy");
   const [orderType, setOrderType] = useState<OrderType>("market");
   const [qty, setQty] = useState(1);
@@ -447,8 +449,8 @@ export default function TradeScreen({
 
         <CompanySearchInput query={searchQuery} onQueryChange={setSearchQuery} onPick={handleSearchPick} />
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 9, margin: "14px 0 20px" }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#A89E8B", alignSelf: "center", marginRight: 2 }}>
+        <div className="nudge-scroll-x" style={{ display: "flex", flexWrap: "nowrap", gap: 9, margin: "14px 0 20px" }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#A89E8B", alignSelf: "center", marginRight: 2, flexShrink: 0 }}>
             try:
           </span>
           {companies.map((c) => {
