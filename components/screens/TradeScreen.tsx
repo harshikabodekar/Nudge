@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { companies, fmt, type Stat } from "@/lib/nudge-data";
+import { useCallback, useEffect, useState } from "react";
+import { companies, findCompanyBySymbol, fmt, type Stat } from "@/lib/nudge-data";
 import { useLiveStock } from "@/lib/useLiveStock";
 import CompanySearchInput from "@/components/CompanySearchInput";
 import Tooltip from "@/components/Tooltip";
@@ -10,6 +10,8 @@ import GoalProgress from "@/components/screens/trade/GoalProgress";
 import type { Wallet } from "@/lib/wallet";
 import type { Goal } from "@/lib/goal";
 import type { SymbolSearchResult } from "@/lib/yahooFinance";
+import { matchGoalToCompany } from "@/lib/goalFit";
+import { hasCompletedFirstTrade } from "@/lib/firstTrade";
 
 type Tab = "buy" | "sell";
 type OrderType = "market" | "limit";
@@ -59,6 +61,11 @@ export default function TradeScreen({
   const [limitPrice, setLimitPrice] = useState(0);
   const [lastTrade, setLastTrade] = useState<string | null>(null);
   const [livePrices, setLivePrices] = useState<Record<string, number>>({});
+  const [learnOpen, setLearnOpen] = useState(false);
+
+  useEffect(() => {
+    Promise.resolve().then(() => setLearnOpen(!hasCompletedFirstTrade()));
+  }, []);
 
   const handlePriceResolved = useCallback((symbol: string, price: number) => {
     setLivePrices((prev) => (prev[symbol] === price ? prev : { ...prev, [symbol]: price }));
@@ -386,6 +393,58 @@ export default function TradeScreen({
           Buy &amp; sell
         </h3>
 
+        {/* Collapsible "New to this?" primer — expanded for first-timers */}
+        <div
+          style={{
+            marginBottom: 16,
+            borderRadius: 16,
+            border: "1px solid rgba(120,105,80,.14)",
+            overflow: "hidden",
+          }}
+        >
+          <button
+            onClick={() => setLearnOpen((o) => !o)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 16px",
+              background: "#F4F0E7",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "var(--font-quicksand), sans-serif",
+              fontWeight: 700,
+              fontSize: 14,
+              color: "#5C544A",
+            }}
+          >
+            <span>New to orders? What do these buttons mean</span>
+            <span style={{ fontSize: 18, lineHeight: 1, transform: learnOpen ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}>
+              ›
+            </span>
+          </button>
+          {learnOpen && (
+            <div style={{ padding: "16px", background: "#FFFDF9", display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { term: "Market order", explain: "Buy or sell right now at the current price. Simple, instant — what most beginners use. The price you see is the price you pay." },
+                { term: "Limit order", explain: "You set your own target price. In a real app this waits until the market hits your price. In Nudge it fills immediately so you can see how the maths works." },
+                { term: "Qty", explain: "How many shares you want to buy or sell. Always whole numbers — you can't own half a share here." },
+                { term: "LTP (last traded price)", explain: "The most recent price this stock actually changed hands at. This is what 'current price' means in Nudge." },
+              ].map((item) => (
+                <div key={item.term} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <span style={{ flex: "none", fontFamily: "var(--font-quicksand), sans-serif", fontWeight: 700, fontSize: 13.5, color: "var(--accent, #4F9D69)", minWidth: 110 }}>
+                    {item.term}
+                  </span>
+                  <span style={{ fontSize: 13.5, fontWeight: 500, color: "#4A4339", lineHeight: 1.5 }}>
+                    {item.explain}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <CompanySearchInput query={searchQuery} onQueryChange={setSearchQuery} onPick={handleSearchPick} />
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 9, margin: "14px 0 20px" }}>
@@ -468,6 +527,40 @@ export default function TradeScreen({
                 </div>
               )}
             </div>
+
+            {/* Goal-fit note for preset companies */}
+            {(() => {
+              if (!goal || !selectedSymbol) return null;
+              const c = findCompanyBySymbol(selectedSymbol);
+              if (!c) return null;
+              const fit = matchGoalToCompany(goal, c);
+              const colors = {
+                good: { bg: "#E9F4EC", border: "#BFE0C8", text: "#36774A", icon: "✓" },
+                caution: { bg: "#FBF1DC", border: "#EDD7A6", text: "#9A7320", icon: "⚠" },
+                risky: { bg: "#FBE8E0", border: "#EFC8B7", text: "#A8512F", icon: "⛔" },
+              }[fit.verdict];
+              return (
+                <div
+                  style={{
+                    padding: "10px 13px",
+                    borderRadius: 13,
+                    background: colors.bg,
+                    border: `1px solid ${colors.border}`,
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    color: colors.text,
+                    lineHeight: 1.5,
+                    display: "flex",
+                    gap: 8,
+                    alignItems: "flex-start",
+                    marginBottom: 16,
+                  }}
+                >
+                  <span style={{ flexShrink: 0 }}>{colors.icon}</span>
+                  <span>{fit.message}</span>
+                </div>
+              );
+            })()}
 
             {/* Buy / Sell tabs */}
             <div

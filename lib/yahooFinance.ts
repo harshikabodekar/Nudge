@@ -172,6 +172,58 @@ const SEARCH_ALIASES: Record<string, string> = {
  * error, no matches) rather than throwing — callers should treat "no
  * results" and "search is down" the same way: show a clean empty state.
  */
+export interface PricePoint {
+  timestamp: number;
+  close: number;
+}
+
+const historyCache = new Map<string, { data: PricePoint[]; expiresAt: number }>();
+
+/**
+ * Fetches ~12 monthly closing prices for the past year for a given symbol.
+ * Returns an empty array on failure — callers should treat no history and
+ * fetch error the same way (omit the sparkline).
+ */
+export async function getStockHistory(symbol: string): Promise<PricePoint[]> {
+  const cached = historyCache.get(symbol);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  try {
+    const url = `${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}?range=1y&interval=1mo`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`status ${res.status}`);
+
+    const json = await res.json() as {
+      chart?: {
+        result?: Array<{
+          timestamp?: number[];
+          indicators?: { quote?: Array<{ close?: (number | null)[] }> };
+        }> | null;
+      };
+    };
+
+    const result = json?.chart?.result?.[0];
+    const timestamps = result?.timestamp ?? [];
+    const closes = result?.indicators?.quote?.[0]?.close ?? [];
+
+    const points: PricePoint[] = [];
+    for (let i = 0; i < timestamps.length; i++) {
+      const close = closes[i];
+      if (typeof close === "number" && Number.isFinite(close)) {
+        points.push({ timestamp: timestamps[i], close });
+      }
+    }
+
+    historyCache.set(symbol, { data: points, expiresAt: Date.now() + CACHE_TTL_MS });
+    return points;
+  } catch {
+    historyCache.set(symbol, { data: [], expiresAt: Date.now() + 60 * 60 * 1000 });
+    return [];
+  }
+}
+
 export async function searchSymbols(query: string): Promise<SymbolSearchResult[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];

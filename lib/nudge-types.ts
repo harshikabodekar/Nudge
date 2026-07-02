@@ -1,1 +1,1 @@
-export type Screen = "home" | "explore" | "about" | "trade";
+export type Screen = "home" | "about" | "explore" | "decide" | "trade";

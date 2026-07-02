@@ -1,39 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { companies, fmt } from "@/lib/nudge-data";
+import { fmt, type Company } from "@/lib/nudge-data";
 import { useLiveStock } from "@/lib/useLiveStock";
 import { markFirstTradeComplete } from "@/lib/firstTrade";
 import type { Goal } from "@/lib/goal";
 
-// Always uses the first preset (Zomato/Eternal) for the guided journey —
-// richest static narrative and most recognisable name for first-timers.
-const GUIDED_COMPANY = companies[0];
 const GUIDED_AMOUNT = 500;
 
 type Step = 0 | 1 | 2 | 3;
 
 export default function GuidedJourneyScreen({
   goal,
+  company,
   onSkip,
   onComplete,
   onBuy,
 }: {
   goal: Goal;
+  company: Company;
   onSkip: () => void;
   onComplete: () => void;
   onBuy: (symbol: string, name: string, quantity: number, price: number) => boolean;
 }) {
   const [step, setStep] = useState<Step>(0);
   const [bought, setBought] = useState<{ shares: number; price: number } | null>(null);
-  const live = useLiveStock(GUIDED_COMPANY.symbol);
-  const price = live.data?.price ?? GUIDED_COMPANY.price;
+  const live = useLiveStock(company.symbol);
+  const price = live.data?.price ?? company.price;
   const shares = Math.floor(GUIDED_AMOUNT / price);
   const invested = shares * price;
 
   const handlePracticeBuy = () => {
     if (shares < 1) return;
-    onBuy(GUIDED_COMPANY.symbol, GUIDED_COMPANY.name, shares, price);
+    onBuy(company.symbol, company.name, shares, price);
     markFirstTradeComplete();
     setBought({ shares, price });
     setStep(3);
@@ -166,8 +165,8 @@ export default function GuidedJourneyScreen({
                   width: 46,
                   height: 46,
                   borderRadius: 14,
-                  background: GUIDED_COMPANY.logoBg,
-                  color: GUIDED_COMPANY.logoColor,
+                  background: company.logoBg,
+                  color: company.logoColor,
                   display: "grid",
                   placeItems: "center",
                   fontFamily: "var(--font-quicksand), sans-serif",
@@ -176,20 +175,20 @@ export default function GuidedJourneyScreen({
                   flexShrink: 0,
                 }}
               >
-                {GUIDED_COMPANY.logo}
+                {company.logo}
               </span>
               <div>
                 <div style={{ fontFamily: "var(--font-quicksand), sans-serif", fontWeight: 700, fontSize: 18, color: "#2B2620" }}>
-                  {GUIDED_COMPANY.name}
+                  {company.name}
                 </div>
                 <div style={{ fontSize: 13.5, fontWeight: 600, color: "#9A907E" }}>
-                  {GUIDED_COMPANY.sector}
+                  {company.sector}
                 </div>
               </div>
             </div>
 
             <p style={{ fontSize: 15.5, fontWeight: 500, color: "#4A4339", lineHeight: 1.6, margin: "0 0 24px" }}>
-              {GUIDED_COMPANY.rows[0]?.text ?? `${GUIDED_COMPANY.name} is one of India's most recognisable brands — a good first company to understand.`}
+              {company.rows[0]?.text ?? `${company.name} is one of India's most recognisable brands — a good first company to understand.`}
             </p>
 
             <button
@@ -243,7 +242,7 @@ export default function GuidedJourneyScreen({
               See what ₹500 actually gets you
             </h2>
             <p style={{ fontSize: 15.5, fontWeight: 500, color: "#5C544A", margin: "0 0 20px", lineHeight: 1.5 }}>
-              {`One share of ${GUIDED_COMPANY.name} costs ₹${fmt(Math.round(price))} right now. ₹500 is enough to buy ${shares > 0 ? shares : "a"} ${shares === 1 ? "share" : "shares"}.`}
+              {`One share of ${company.name} costs ₹${fmt(Math.round(price))} right now. ₹500 is enough to buy ${shares > 0 ? shares : "a"} ${shares === 1 ? "share" : "shares"}.`}
             </p>
 
             {shares >= 1 ? (
@@ -367,7 +366,7 @@ export default function GuidedJourneyScreen({
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
                 <div>
                   <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: ".4px", textTransform: "uppercase", color: "#A89E8B" }}>Company</div>
-                  <div style={{ fontFamily: "var(--font-quicksand), sans-serif", fontWeight: 700, fontSize: 16, color: "#2B2620" }}>{GUIDED_COMPANY.name}</div>
+                  <div style={{ fontFamily: "var(--font-quicksand), sans-serif", fontWeight: 700, fontSize: 16, color: "#2B2620" }}>{company.name}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: ".4px", textTransform: "uppercase", color: "#A89E8B" }}>Shares</div>
@@ -447,7 +446,7 @@ export default function GuidedJourneyScreen({
             </h2>
             <p style={{ fontSize: 16, fontWeight: 500, color: "#5C544A", margin: "0 auto 20px", maxWidth: 380, lineHeight: 1.55 }}>
               {bought
-                ? `You practice-bought ${bought.shares} ${bought.shares === 1 ? "share" : "shares"} of ${GUIDED_COMPANY.name} at ₹${fmt(Math.round(bought.price))} each. It's in your wallet now.`
+                ? `You practice-bought ${bought.shares} ${bought.shares === 1 ? "share" : "shares"} of ${company.name} at ₹${fmt(Math.round(bought.price))} each. It's in your wallet now.`
                 : `Your practice buy went through. It's in your wallet now.`}
             </p>
 

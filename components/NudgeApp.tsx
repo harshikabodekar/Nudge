@@ -7,6 +7,7 @@ import HomeScreen from "@/components/screens/HomeScreen";
 import ExploreScreen from "@/components/screens/ExploreScreen";
 import AboutScreen from "@/components/screens/AboutScreen";
 import TradeScreen from "@/components/screens/TradeScreen";
+import DecisionScreen from "@/components/screens/DecisionScreen";
 import GoalOnboardingScreen from "@/components/screens/GoalOnboardingScreen";
 import GuidedJourneyScreen from "@/components/screens/GuidedJourneyScreen";
 import GoalBanner from "@/components/GoalBanner";
@@ -16,6 +17,7 @@ import { buyShares, loadWallet, persistWallet, resetWallet as resetWalletData, s
 import type { Wallet } from "@/lib/wallet";
 import { clearGoal, loadGoal, type Goal } from "@/lib/goal";
 import { hasCompletedFirstTrade } from "@/lib/firstTrade";
+import type { SymbolSearchResult } from "@/lib/yahooFinance";
 
 const ACCENT = "#4F9D69";
 const RADIUS = 24;
@@ -23,22 +25,17 @@ const RADIUS = 24;
 export default function NudgeApp() {
   const [screen, setScreen] = useState<Screen>("home");
   const [companyIdx, setCompanyIdx] = useState(0);
+  const [searchedCompany, setSearchedCompany] = useState<SymbolSearchResult | null>(null);
   const [amount, setAmount] = useState(500);
   const [openStat, setOpenStat] = useState<string | null>(null);
   const [walkStep, setWalkStep] = useState(0);
   const [wallet, setWallet] = useState<Wallet>(() => loadWallet());
-  // Lazy-init from localStorage is safe here (same as wallet) because goal
-  // no longer gates the first-painted screen — the landing page always
-  // renders regardless of its value, so server/client can't disagree on
-  // the initial DOM. It only matters once the user tries to go to Explore.
   const [goal, setGoal] = useState<Goal | null>(() => loadGoal());
   const [showGoalCapture, setShowGoalCapture] = useState(false);
   const [showGuidedJourney, setShowGuidedJourney] = useState(false);
 
   const goTo = (next: Screen) => {
     if (next === "explore" && !goal) {
-      // Ask what they're saving toward before showing any stock — triggered
-      // by the attempt to reach Explore, not as a gate in front of the app.
       setShowGoalCapture(true);
       return;
     }
@@ -71,12 +68,11 @@ export default function NudgeApp() {
 
   const selectCompany = (i: number) => {
     setCompanyIdx(i);
+    setSearchedCompany(null);
     setWalkStep(0);
     setOpenStat(null);
   };
 
-  // Same reset as selectCompany, without touching companyIdx — used when the
-  // user picks a searched (non-preset) company, which Explore tracks locally.
   const resetSelection = () => {
     setWalkStep(0);
     setOpenStat(null);
@@ -90,14 +86,12 @@ export default function NudgeApp() {
     const company = companies[companyIdx];
     const quantity = Math.floor(amount / price);
     const next = buyShares(wallet, company, quantity, price);
-    if (next === wallet) return; // order couldn't be filled — no-op
+    if (next === wallet) return;
     persistWallet(next);
     setWallet(next);
     setWalkStep(99);
   };
 
-  // Used by the Trade screen's order panel — any company (preset or
-  // searched), quantity entered directly rather than derived from a ₹ amount.
   const handleBuy = (symbol: string, name: string, quantity: number, price: number): boolean => {
     const next = buyShares(wallet, { symbol, name }, quantity, price);
     if (next === wallet) return false;
@@ -130,6 +124,10 @@ export default function NudgeApp() {
     setGoal(null);
   };
 
+  const holdingsList = Object.values(wallet.holdings);
+  const investedValue = holdingsList.reduce((a, h) => a + h.quantity * h.avgPrice, 0);
+  const totalValue = wallet.cash + investedValue;
+
   return (
     <div
       style={
@@ -150,6 +148,7 @@ export default function NudgeApp() {
       ) : showGuidedJourney && goal ? (
         <GuidedJourneyScreen
           goal={goal}
+          company={companies[companyIdx]}
           onSkip={handleSkipGuided}
           onComplete={handleCompleteGuided}
           onBuy={handleBuy}
@@ -158,7 +157,7 @@ export default function NudgeApp() {
         <>
           <NudgeHeader screen={screen} onNavigate={goTo} />
 
-          {goal && (screen === "explore" || screen === "trade") && (
+          {goal && (screen === "explore" || screen === "trade" || screen === "decide") && (
             <GoalBanner goal={goal} onChangeGoal={handleChangeGoal} />
           )}
 
@@ -167,7 +166,9 @@ export default function NudgeApp() {
           {screen === "explore" && (
             <ExploreScreen
               companyIdx={companyIdx}
+              searchedCompany={searchedCompany}
               onSelectCompany={selectCompany}
+              onSearchedCompanyChange={setSearchedCompany}
               onResetSelection={resetSelection}
               goal={goal}
               amount={amount}
@@ -181,11 +182,27 @@ export default function NudgeApp() {
               onCloseWalk={() => setWalkStep(0)}
               onConfirmBuy={confirmBuy}
               onGoTrade={() => goTo("trade")}
+              onDecide={() => { setScreen("decide"); window.scrollTo(0, 0); }}
             />
           )}
 
           {screen === "about" && (
-            <AboutScreen onExplore={() => goTo("explore")} onChangeGoal={handleChangeGoal} />
+            <AboutScreen
+              goal={goal}
+              totalValue={totalValue}
+              onExplore={() => goTo("explore")}
+              onChangeGoal={handleChangeGoal}
+            />
+          )}
+
+          {screen === "decide" && (
+            <DecisionScreen
+              companyIdx={companyIdx}
+              searchedCompany={searchedCompany}
+              goal={goal}
+              onBack={() => { setScreen("explore"); window.scrollTo(0, 0); }}
+              onGoTrade={() => goTo("trade")}
+            />
           )}
 
           {screen === "trade" && (

@@ -8,10 +8,13 @@ import TappableTerms from "@/components/TappableTerms";
 import type { SymbolSearchResult } from "@/lib/yahooFinance";
 import type { Goal } from "@/lib/goal";
 import { markConceptLearned } from "@/lib/learned";
+import { matchGoalToCompany } from "@/lib/goalFit";
 
 interface ExploreScreenProps {
   companyIdx: number;
+  searchedCompany: SymbolSearchResult | null;
   onSelectCompany: (i: number) => void;
+  onSearchedCompanyChange: (c: SymbolSearchResult | null) => void;
   onResetSelection: () => void;
   goal: Goal | null;
   amount: number;
@@ -25,6 +28,7 @@ interface ExploreScreenProps {
   onCloseWalk: () => void;
   onConfirmBuy: (price: number) => void;
   onGoTrade: () => void;
+  onDecide: () => void;
 }
 
 interface SelectedView {
@@ -42,8 +46,6 @@ interface SelectedView {
   isPreset: boolean;
 }
 
-// Generic, company-agnostic definitions used for searched companies that
-// have no static narrative — never borrowed from another company's copy.
 const GENERIC_STATS: Stat[] = [
   {
     key: "pe",
@@ -92,7 +94,9 @@ function searchedToSelected(result: SymbolSearchResult): SelectedView {
 
 export default function ExploreScreen({
   companyIdx,
+  searchedCompany,
   onSelectCompany,
+  onSearchedCompanyChange,
   onResetSelection,
   goal,
   amount,
@@ -106,9 +110,9 @@ export default function ExploreScreen({
   onCloseWalk,
   onConfirmBuy,
   onGoTrade,
+  onDecide,
 }: ExploreScreenProps) {
   const presetCompany = companies[companyIdx] ?? companies[0];
-  const [searchedCompany, setSearchedCompany] = useState<SymbolSearchResult | null>(null);
   const [searchQuery, setSearchQuery] = useState(presetCompany.name);
 
   const selected: SelectedView = searchedCompany
@@ -168,7 +172,7 @@ export default function ExploreScreen({
     },
   };
   const walk = walkMap[walkStep] ?? walkMap[1];
-  const walkDoneBody = `You practice-bought ${simShares} ${sWord} of ${selected.name}. It’s sitting in your wallet now.`;
+  const walkDoneBody = `You practice-bought ${simShares} ${sWord} of ${selected.name}. It's sitting in your wallet now.`;
 
   const handleToggleStat = (key: string) => {
     markConceptLearned(key);
@@ -176,15 +180,12 @@ export default function ExploreScreen({
   };
 
   const pickPreset = (i: number) => {
-    setSearchedCompany(null);
+    onSearchedCompanyChange(null);
     setSearchQuery(companies[i].name);
     onSelectCompany(i);
   };
 
   const pickSearchResult = (result: SymbolSearchResult) => {
-    // Compare base ticker only (ignore .NS/.BO) so picking either exchange
-    // listing of a preset company (e.g. ETERNAL.BO or ETERNAL.NS) resolves
-    // to the same rich preset card instead of only one of them matching.
     const baseTicker = (symbol: string) => symbol.split(".")[0];
     const presetIndex = companies.findIndex(
       (c) => baseTicker(c.symbol) === baseTicker(result.symbol)
@@ -193,9 +194,20 @@ export default function ExploreScreen({
       pickPreset(presetIndex);
       return;
     }
-    setSearchedCompany(result);
+    onSearchedCompanyChange(result);
     setSearchQuery(result.name);
     onResetSelection();
+  };
+
+  const goalFit =
+    goal && selected.isPreset
+      ? matchGoalToCompany(goal, presetCompany)
+      : null;
+
+  const goalFitColors = {
+    good: { bg: "#E9F4EC", border: "#BFE0C8", text: "#36774A", icon: "✓" },
+    caution: { bg: "#FBF1DC", border: "#EDD7A6", text: "#9A7320", icon: "⚠" },
+    risky: { bg: "#FBE8E0", border: "#EFC8B7", text: "#A8512F", icon: "⛔" },
   };
 
   return (
@@ -370,7 +382,6 @@ export default function ExploreScreen({
               )}
             </div>
           </div>
-          {/* Vibe Meter — only for preset companies with a static judgment */}
           {vc && (
             <div
               style={{
@@ -616,7 +627,30 @@ export default function ExploreScreen({
           <span>₹100</span>
           <span>₹5,000</span>
         </div>
-        {goal && (
+
+        {/* Goal-fit message (replaces the generic "moves you toward" text) */}
+        {goalFit && (
+          <div
+            style={{
+              margin: "14px 0 0",
+              padding: "11px 14px",
+              borderRadius: 14,
+              background: goalFitColors[goalFit.verdict].bg,
+              border: `1px solid ${goalFitColors[goalFit.verdict].border}`,
+              fontSize: 13.5,
+              fontWeight: 600,
+              color: goalFitColors[goalFit.verdict].text,
+              lineHeight: 1.5,
+              display: "flex",
+              gap: 8,
+              alignItems: "flex-start",
+            }}
+          >
+            <span style={{ flexShrink: 0 }}>{goalFitColors[goalFit.verdict].icon}</span>
+            <span>{goalFit.message}</span>
+          </div>
+        )}
+        {!goalFit && goal && !selected.isPreset && (
           <p
             style={{
               margin: "12px 0 0",
@@ -629,6 +663,7 @@ export default function ExploreScreen({
             {`putting ₹${fmt(amount)} into ${selected.name} moves you toward your ${goal.label}.`}
           </p>
         )}
+
         {price === null ? (
           <div
             style={{
@@ -747,6 +782,49 @@ export default function ExploreScreen({
         )}
       </section>
 
+      {/* Think it through — Company Decision page */}
+      <section
+        style={{
+          marginTop: 18,
+          background: "#FFFDF9",
+          border: "1px solid rgba(120,105,80,.12)",
+          borderRadius: "calc(var(--radius, 24px) + 8px)",
+          padding: "clamp(20px, 4vw, 28px)",
+          boxShadow: "0 18px 50px -34px rgba(80,65,40,.4)",
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: "var(--font-quicksand), sans-serif",
+            fontWeight: 700,
+            fontSize: 19,
+            margin: "0 0 6px",
+            color: "#2B2620",
+          }}
+        >
+          Ready to dig deeper?
+        </h3>
+        <p style={{ fontSize: 15, color: "#6A6155", fontWeight: 500, margin: "0 0 18px", lineHeight: 1.5 }}>
+          See pros, cons, what-if scenarios, and how this company fits your goal — all in one place before you decide.
+        </p>
+        <button
+          onClick={onDecide}
+          style={{
+            fontFamily: "var(--font-quicksand), sans-serif",
+            fontWeight: 700,
+            fontSize: 16,
+            color: "var(--accent, #4F9D69)",
+            background: "color-mix(in srgb, var(--accent, #4F9D69) 11%, #fff)",
+            border: `1.5px solid color-mix(in srgb, var(--accent, #4F9D69) 35%, transparent)`,
+            cursor: "pointer",
+            padding: "13px 24px",
+            borderRadius: 999,
+          }}
+        >
+          Think it through before you buy &nbsp;→
+        </button>
+      </section>
+
       {/* First-buy walkthrough */}
       <section
         style={{
@@ -784,7 +862,7 @@ export default function ExploreScreen({
             </p>
             {!selected.isPreset ? (
               <p style={{ fontSize: 14, fontWeight: 700, color: "#9A7320", margin: 0 }}>
-                Practice-buy is available for our 3 starter picks for now — try Zomato, Infosys, or Tata Motors below to give it a go.
+                Practice-buy walkthrough is available for our starter picks — try one of the chips above to give it a go.
               </p>
             ) : simEnough ? (
               <button

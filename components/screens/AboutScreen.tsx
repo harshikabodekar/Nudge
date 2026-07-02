@@ -1,41 +1,40 @@
 "use client";
 
 import LearnedPanel from "@/components/LearnedPanel";
+import GoalProgress from "@/components/screens/trade/GoalProgress";
+import type { Goal } from "@/lib/goal";
 
-const AUDIENCE = [
+const WHY_ITEMS = [
   {
-    icon: "🎓",
-    text: "College students curious about investing but too scared to start.",
+    icon: "📉",
+    title: "Inflation quietly eats your savings",
+    text: "₹10,000 in a savings account earning 3–4% interest loses real value every year if inflation runs higher. Investing is one of the few ways to stay ahead of it.",
   },
   {
-    icon: "💼",
-    text: 'Young working adults with ₹500 they want to "try" the market with.',
+    icon: "⏳",
+    title: "Time in the market beats timing the market",
+    text: "The investor who starts imperfectly — early, with small amounts — almost always does better than the one who waits for the perfect moment. That moment rarely comes.",
   },
   {
-    icon: "😮‍💨",
-    text: "Anyone who opened a trading app, got overwhelmed, and quietly closed it.",
-  },
-];
-
-const PROMISES = [
-  {
-    title: "Zero jargon",
-    text: "Every term gets explained right where you read it.",
+    icon: "🌱",
+    title: "You don't need much to start",
+    text: "Some shares cost less than ₹500. You don't need to be rich to invest — you just need to understand what you're doing before you put a single rupee in.",
   },
   {
-    title: "No pressure",
-    text: 'We never say "buy" or "sell". Just "here’s the picture".',
-  },
-  {
-    title: "No signup",
-    text: "Start exploring instantly. Nothing to lose.",
+    icon: "🧠",
+    title: "The real risk is doing nothing",
+    text: "Not investing has a cost too — it's just invisible. Nudge won't push you to buy anything. But it will help you understand the landscape so the choice is actually yours.",
   },
 ];
 
 export default function AboutScreen({
+  goal,
+  totalValue,
   onExplore,
   onChangeGoal,
 }: {
+  goal: Goal | null;
+  totalValue: number;
   onExplore: () => void;
   onChangeGoal: () => void;
 }) {
@@ -67,12 +66,11 @@ export default function AboutScreen({
             fontSize: "clamp(30px, 5vw, 46px)",
             lineHeight: 1.12,
             letterSpacing: "-.8px",
-            margin: "12px 0 24px",
+            margin: "12px 0 20px",
             color: "#2B2620",
           }}
         >
-          A calm, knowledgeable friend who happens to know the stock market
-          really well.
+          A calm, knowledgeable friend who happens to know the stock market really well.
         </h2>
         <p
           style={{
@@ -80,26 +78,12 @@ export default function AboutScreen({
             lineHeight: 1.6,
             color: "#5C544A",
             fontWeight: 500,
-            margin: "0 0 18px",
+            margin: "0 0 16px",
           }}
         >
-          Nudge is a beginner-first investment companion. It doesn&apos;t
-          execute trades. It doesn&apos;t bury you in charts. It just — talks
-          to you.
-        </p>
-        <p
-          style={{
-            fontSize: "clamp(17px, 2vw, 19px)",
-            lineHeight: 1.6,
-            color: "#5C544A",
-            fontWeight: 500,
-            margin: "0 0 18px",
-          }}
-        >
-          You get a friendly tour of how investing works. You pick a company
-          you&apos;re curious about. Nudge gives you a plain-language
-          breakdown — what it does, how it&apos;s doing, and whether a
-          first-timer should even consider it right now.
+          Nudge is a beginner-first investment companion. It doesn&apos;t execute trades.
+          It doesn&apos;t bury you in charts. It just — talks to you about one company at a time,
+          in plain language.
         </p>
         <p
           style={{
@@ -111,10 +95,11 @@ export default function AboutScreen({
             margin: "0 0 40px",
           }}
         >
-          No jargon. No fear. Just your first nudge.
+          No jargon. No pressure. Just your first nudge.
         </p>
       </div>
 
+      {/* Why investing matters */}
       <div
         style={{
           background: "#FFFDF9",
@@ -130,58 +115,110 @@ export default function AboutScreen({
             fontFamily: "var(--font-quicksand), sans-serif",
             fontWeight: 700,
             fontSize: 20,
-            margin: "0 0 18px",
+            margin: "0 0 20px",
             color: "#2B2620",
           }}
         >
-          Who it&apos;s for
+          Why does investing even matter?
         </h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {AUDIENCE.map((who) => (
-            <div
-              key={who.text}
-              style={{ display: "flex", alignItems: "flex-start", gap: 14 }}
-            >
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {WHY_ITEMS.map((item) => (
+            <div key={item.title} style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
               <span
                 style={{
                   flex: "none",
-                  width: 40,
-                  height: 40,
-                  borderRadius: 13,
-                  background: "color-mix(in srgb, var(--accent, #4F9D69) 13%, #fff)",
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  background: "color-mix(in srgb, var(--accent, #4F9D69) 11%, #fff)",
+                  border: "1px solid color-mix(in srgb, var(--accent, #4F9D69) 18%, transparent)",
                   display: "grid",
                   placeItems: "center",
-                  fontSize: 19,
+                  fontSize: 20,
                 }}
               >
-                {who.icon}
+                {item.icon}
               </span>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 16.5,
-                  lineHeight: 1.5,
-                  fontWeight: 500,
-                  color: "#4A4339",
-                  paddingTop: 8,
-                }}
-              >
-                {who.text}
-              </p>
+              <div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-quicksand), sans-serif",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    color: "#2B2620",
+                    marginBottom: 4,
+                  }}
+                >
+                  {item.title}
+                </div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 15,
+                    lineHeight: 1.55,
+                    fontWeight: 500,
+                    color: "#4A4339",
+                  }}
+                >
+                  {item.text}
+                </p>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Your progress */}
+      {goal && (
+        <div style={{ marginBottom: 28 }}>
+          <h3
+            style={{
+              fontFamily: "var(--font-quicksand), sans-serif",
+              fontWeight: 700,
+              fontSize: 20,
+              margin: "0 0 14px",
+              color: "#2B2620",
+            }}
+          >
+            Your progress
+          </h3>
+          <GoalProgress goal={goal} totalValue={totalValue} />
+        </div>
+      )}
+
+      {/* What you've learned */}
+      <div style={{ marginBottom: 32 }}>
+        <h3
+          style={{
+            fontFamily: "var(--font-quicksand), sans-serif",
+            fontWeight: 700,
+            fontSize: 20,
+            margin: "0 0 4px",
+            color: "#2B2620",
+          }}
+        >
+          What you&apos;ve picked up
+        </h3>
+        <p style={{ fontSize: 14.5, fontWeight: 500, color: "#6A6155", margin: "0 0 14px", lineHeight: 1.5 }}>
+          Every time you tap a term explainer in the app, it gets quietly added here. No account needed.
+        </p>
+        <LearnedPanel />
+      </div>
+
+      {/* What Nudge is */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           gap: 14,
-          marginBottom: 40,
+          marginBottom: 36,
         }}
       >
-        {PROMISES.map((p) => (
+        {[
+          { title: "Zero jargon", text: "Every term gets explained right where you read it." },
+          { title: "No pressure", text: "We never tell you to buy or sell. Just the full picture." },
+          { title: "No signup", text: "Start exploring instantly. Nothing to lose." },
+        ].map((p) => (
           <div
             key={p.title}
             style={{
@@ -202,23 +239,14 @@ export default function AboutScreen({
             >
               {p.title}
             </div>
-            <div
-              style={{
-                fontSize: 14.5,
-                lineHeight: 1.5,
-                fontWeight: 500,
-                color: "#6A6155",
-              }}
-            >
+            <div style={{ fontSize: 14.5, lineHeight: 1.5, fontWeight: 500, color: "#6A6155" }}>
               {p.text}
             </div>
           </div>
         ))}
       </div>
 
-      <LearnedPanel />
-
-      <div style={{ textAlign: "center", marginTop: 40 }}>
+      <div style={{ textAlign: "center" }}>
         <button
           onClick={onExplore}
           style={{

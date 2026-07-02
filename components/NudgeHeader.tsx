@@ -4,8 +4,8 @@ import type { Screen } from "@/lib/nudge-types";
 
 const NAV_ITEMS: { key: Screen; label: string }[] = [
   { key: "home", label: "Home" },
-  { key: "explore", label: "Explore" },
   { key: "about", label: "About" },
+  { key: "explore", label: "Explore" },
   { key: "trade", label: "Trade" },
 ];
 
