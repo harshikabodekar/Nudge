@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { companies, fmt, vibeColors } from "@/lib/nudge-data";
 import { useLiveStock } from "@/lib/useLiveStock";
 import { matchGoalToCompany } from "@/lib/goalFit";
 import type { Goal } from "@/lib/goal";
-import type { SymbolSearchResult, PricePoint } from "@/lib/yahooFinance";
+import type { SymbolSearchResult } from "@/lib/yahooFinance";
+import PriceChart from "@/components/PriceChart";
 
 interface DecisionScreenProps {
   companyIdx: number;
@@ -15,87 +16,6 @@ interface DecisionScreenProps {
   onGoTrade: (symbol: string, name: string) => void;
 }
 
-function useStockHistory(symbol: string): PricePoint[] {
-  const [history, setHistory] = useState<PricePoint[]>([]);
-  useEffect(() => {
-    if (!symbol) return;
-    let cancelled = false;
-    fetch(`/api/history?symbol=${encodeURIComponent(symbol)}`)
-      .then((r) => r.json())
-      .then((j: { history?: PricePoint[] }) => {
-        if (!cancelled) setHistory(j.history ?? []);
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [symbol]);
-  return history;
-}
-
-function Sparkline({ points }: { points: PricePoint[] }) {
-  if (points.length < 3) return null;
-  const W = 360;
-  const H = 72;
-  const closes = points.map((p) => p.close);
-  const min = Math.min(...closes);
-  const max = Math.max(...closes);
-  const range = max - min || 1;
-
-  const ptArray = closes.map((c, i) => ({
-    x: (i / (closes.length - 1)) * W,
-    y: H - ((c - min) / range) * (H - 16) - 8,
-  }));
-
-  const isUp = closes[closes.length - 1] >= closes[0];
-  const color = isUp ? "#4F9D69" : "#D17A5A";
-  const linePath = ptArray
-    .map(({ x, y }, i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`)
-    .join(" ");
-  const areaPath = `${linePath} L ${ptArray[ptArray.length - 1].x.toFixed(1)} ${H} L 0 ${H} Z`;
-  const changePct = (((closes[closes.length - 1] - closes[0]) / closes[0]) * 100).toFixed(1);
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-        <span style={{ fontFamily: "var(--font-quicksand), sans-serif", fontWeight: 700, fontSize: 15, color: "#2B2620" }}>
-          12-month price
-        </span>
-        <span style={{ fontWeight: 700, fontSize: 13, color: isUp ? "#36774A" : "#A8512F" }}>
-          {`${isUp ? "▲ +" : "▼ "}${changePct}% over the year`}
-        </span>
-      </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: H, display: "block", overflow: "visible" }}>
-        <defs>
-          <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.20" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.01" />
-          </linearGradient>
-        </defs>
-        <path d={areaPath} fill="url(#sparkGrad)" />
-        <path
-          d={linePath}
-          fill="none"
-          stroke={color}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {/* Current price dot */}
-        <circle
-          cx={ptArray[ptArray.length - 1].x}
-          cy={ptArray[ptArray.length - 1].y}
-          r={4}
-          fill={color}
-          stroke="#fff"
-          strokeWidth={2}
-        />
-      </svg>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, color: "#B3A998", marginTop: 4 }}>
-        <span>12 months ago</span>
-        <span>today</span>
-      </div>
-    </div>
-  );
-}
 
 function YearRangeBar({ low, high, current }: { low: number; high: number; current: number }) {
   const pct = Math.max(0, Math.min(100, ((current - low) / (high - low)) * 100));
@@ -163,7 +83,6 @@ export default function DecisionScreen({
   const price = live.data?.price ?? preset?.price ?? null;
 
   const [amount, setAmount] = useState(500);
-  const history = useStockHistory(symbol);
 
   const vc = preset?.vibe ? vibeColors(preset.vibe) : null;
   const goalFit = goal && preset ? matchGoalToCompany(goal, preset) : null;
@@ -491,10 +410,10 @@ export default function DecisionScreen({
         </div>
       )}
 
-      {/* Price history sparkline */}
-      {history.length >= 3 && (
+      {/* Price history chart */}
+      {symbol && (
         <div style={cardStyle}>
-          <Sparkline points={history} />
+          <PriceChart symbol={symbol} />
         </div>
       )}
 

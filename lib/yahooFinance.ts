@@ -177,7 +177,16 @@ export interface PricePoint {
   close: number;
 }
 
+export interface OHLCPoint {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
 const historyCache = new Map<string, { data: PricePoint[]; expiresAt: number }>();
+const ohlcCache = new Map<string, { data: OHLCPoint[]; expiresAt: number }>();
 
 /**
  * Fetches ~12 monthly closing prices for the past year for a given symbol.
@@ -220,6 +229,75 @@ export async function getStockHistory(symbol: string): Promise<PricePoint[]> {
     return points;
   } catch {
     historyCache.set(symbol, { data: [], expiresAt: Date.now() + 60 * 60 * 1000 });
+    return [];
+  }
+}
+
+/**
+ * Fetches OHLC price history for a given symbol, range, and interval.
+ * Cached per (symbol, range, interval) triple for 24 h. Returns empty array
+ * on any failure so callers can fall back to a "chart unavailable" state.
+ */
+export async function getStockHistoryOHLC(
+  symbol: string,
+  range: string,
+  interval: string,
+): Promise<OHLCPoint[]> {
+  const key = `${symbol}:${range}:${interval}`;
+  const cached = ohlcCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  try {
+    const url = `${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}?range=${encodeURIComponent(range)}&interval=${encodeURIComponent(interval)}`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`status ${res.status}`);
+
+    const json = await res.json() as {
+      chart?: {
+        result?: Array<{
+          timestamp?: number[];
+          indicators?: {
+            quote?: Array<{
+              open?: (number | null)[];
+              high?: (number | null)[];
+              low?: (number | null)[];
+              close?: (number | null)[];
+            }>;
+          };
+        }> | null;
+      };
+    };
+
+    const result = json?.chart?.result?.[0];
+    const timestamps = result?.timestamp ?? [];
+    const q = result?.indicators?.quote?.[0] ?? {};
+    const opens = q.open ?? [];
+    const highs = q.high ?? [];
+    const lows = q.low ?? [];
+    const closes = q.close ?? [];
+
+    const points: OHLCPoint[] = [];
+    for (let i = 0; i < timestamps.length; i++) {
+      const o = opens[i];
+      const h = highs[i];
+      const l = lows[i];
+      const c = closes[i];
+      if (
+        typeof o === "number" && Number.isFinite(o) &&
+        typeof h === "number" && Number.isFinite(h) &&
+        typeof l === "number" && Number.isFinite(l) &&
+        typeof c === "number" && Number.isFinite(c)
+      ) {
+        points.push({ timestamp: timestamps[i], open: o, high: h, low: l, close: c });
+      }
+    }
+
+    ohlcCache.set(key, { data: points, expiresAt: Date.now() + CACHE_TTL_MS });
+    return points;
+  } catch {
+    ohlcCache.set(key, { data: [], expiresAt: Date.now() + 60 * 60 * 1000 });
     return [];
   }
 }

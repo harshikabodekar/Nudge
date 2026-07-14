@@ -9,6 +9,7 @@ import type { SymbolSearchResult } from "@/lib/yahooFinance";
 import type { Goal } from "@/lib/goal";
 import { markConceptLearned } from "@/lib/learned";
 import { matchGoalToCompany } from "@/lib/goalFit";
+import PriceChart from "@/components/PriceChart";
 
 interface ExploreScreenProps {
   companyIdx: number;
@@ -546,6 +547,33 @@ export default function ExploreScreen({
           onToggle={handleToggleStat}
         />
       </section>
+
+      {/* Price chart */}
+      {selected.symbol && (
+        <section
+          style={{
+            marginTop: 18,
+            background: "#FFFDF9",
+            border: "1px solid rgba(120,105,80,.12)",
+            borderRadius: "calc(var(--radius, 24px) + 8px)",
+            padding: "clamp(16px, 3.5vw, 24px) clamp(20px, 4vw, 28px)",
+            boxShadow: "0 18px 50px -34px rgba(80,65,40,.4)",
+          }}
+        >
+          <h3
+            style={{
+              fontFamily: "var(--font-quicksand), sans-serif",
+              fontWeight: 700,
+              fontSize: 19,
+              margin: "0 0 14px",
+              color: "#2B2620",
+            }}
+          >
+            Price history
+          </h3>
+          <PriceChart symbol={selected.symbol} compact />
+        </section>
+      )}
 
       {/* ₹ simulator */}
       <section

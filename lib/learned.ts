@@ -10,6 +10,7 @@ export const CONCEPTS = {
   pnl:    { label: "P&L",              blurb: "profit and loss — how much more or less your shares are worth" },
   qty:    { label: "qty",              blurb: "how many shares you want to buy or sell" },
   share:  { label: "what a share is",   blurb: "a tiny piece of ownership in a company" },
+  charts: { label: "reading charts",    blurb: "how to read a price chart and what candles mean" },
 } as const;
 
 export type ConceptId = keyof typeof CONCEPTS;

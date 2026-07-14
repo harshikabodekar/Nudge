@@ -184,6 +184,44 @@ body {
   animation: nudgeCelebIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* ── Price chart animations ──────────────────────────────────────────────── */
+@keyframes chartLineDraw {
+  from { stroke-dashoffset: 100; }
+  to   { stroke-dashoffset: 0; }
+}
+.chart-line-animate {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: chartLineDraw 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes chartCandleRise {
+  from { transform: scaleY(0); opacity: 0; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+.chart-candle {
+  animation: chartCandleRise 0.4s cubic-bezier(0.34, 1.1, 0.64, 1) both;
+  transform-box: fill-box;
+  transform-origin: bottom;
+}
+
+@keyframes chartPulse {
+  0%,  100% { opacity: 1; }
+  50%        { opacity: 0.3; }
+}
+.chart-school-pulse {
+  animation: chartPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes chartRangePulse {
+  0%,  100% { box-shadow: 0 0 0 0 rgba(79, 157, 105, 0); }
+  50%        { box-shadow: 0 0 0 4px rgba(79, 157, 105, 0.35); }
+}
+.chart-range-highlight {
+  animation: chartRangePulse 1s ease infinite;
+  border-radius: 999px;
+}
+
 /* ── Horizontally-scrollable chip row, no visible scrollbar ─────────────── */
 .nudge-scroll-x {
   overflow-x: auto;
