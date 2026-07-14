@@ -16,9 +16,27 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Nudge — your first nudge into investing",
+  metadataBase: new URL(
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000"
+  ),
+  title: "Nudge — investing for people who find investing scary",
   description:
-    "A beginner-first investment companion. Search any company, get a plain-language breakdown. No jargon, no pressure.",
+    "Plain language. Real companies. Practice with fake money. No signup, no pressure — your first nudge into investing.",
+  openGraph: {
+    title: "Nudge — investing for people who find investing scary",
+    description:
+      "Plain language. Real companies. Practice with fake money. No signup, no pressure — your first nudge into investing.",
+    type: "website",
+    siteName: "Nudge",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nudge — investing for people who find investing scary",
+    description:
+      "Plain language. Real companies. Practice with fake money. No signup, no pressure — your first nudge into investing.",
+  },
 };
 
 export default function RootLayout({

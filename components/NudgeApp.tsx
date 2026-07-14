@@ -9,14 +9,27 @@ import AboutScreen from "@/components/screens/AboutScreen";
 import TradeScreen from "@/components/screens/TradeScreen";
 import DecisionScreen from "@/components/screens/DecisionScreen";
 import GoalOnboardingScreen from "@/components/screens/GoalOnboardingScreen";
+import GoalsScreen from "@/components/screens/GoalsScreen";
 import GuidedJourneyScreen from "@/components/screens/GuidedJourneyScreen";
 import GoalBanner from "@/components/GoalBanner";
 import type { Screen } from "@/lib/nudge-types";
 import { companies } from "@/lib/nudge-data";
-import { buyShares, loadWallet, persistWallet, resetWallet as resetWalletData, sellShares } from "@/lib/wallet";
+import {
+  buyShares,
+  loadWallet,
+  persistWallet,
+  resetWallet as resetWalletData,
+  sellShares,
+} from "@/lib/wallet";
 import type { Wallet } from "@/lib/wallet";
-import { clearGoal, loadGoal, type Goal } from "@/lib/goal";
-import { hasCompletedFirstTrade } from "@/lib/firstTrade";
+import {
+  loadGoals,
+  saveGoals,
+  loadActiveGoalId,
+  saveActiveGoalId,
+  type Goal,
+} from "@/lib/goals";
+import { hasCompletedFirstTrade, markFirstTradeComplete } from "@/lib/firstTrade";
 import type { SymbolSearchResult } from "@/lib/yahooFinance";
 
 const ACCENT = "#4F9D69";
@@ -30,16 +43,22 @@ export default function NudgeApp() {
   const [openStat, setOpenStat] = useState<string | null>(null);
   const [walkStep, setWalkStep] = useState(0);
   const [wallet, setWallet] = useState<Wallet>(() => loadWallet());
-  const [goal, setGoal] = useState<Goal | null>(() => loadGoal());
+  const [goals, setGoals] = useState<Goal[]>(() => loadGoals());
+  const [activeGoalId, setActiveGoalId] = useState<string | null>(() => loadActiveGoalId());
   const [showGoalCapture, setShowGoalCapture] = useState(false);
+  const [goalCaptureSource, setGoalCaptureSource] = useState<"onboard" | "goals">("onboard");
   const [showGuidedJourney, setShowGuidedJourney] = useState(false);
-  const [tradePreselect, setTradePreselect] = useState<{ symbol: string; name: string } | null>(null);
+  const [tradePreselect, setTradePreselect] = useState<{ symbol: string; name: string } | null>(
+    null
+  );
+
+  // Derived: active goal is the explicitly set one, falling back to first goal
+  const goal = goals.find((g) => g.id === activeGoalId) ?? goals[0] ?? null;
 
   const goTo = (next: Screen) => {
-    // Clear any pending trade preselect when navigating via normal nav.
-    // DecisionScreen's onGoTrade bypasses goTo and sets it directly.
     setTradePreselect(null);
-    if (next === "explore" && !goal) {
+    if (next === "explore" && goals.length === 0) {
+      setGoalCaptureSource("onboard");
       setShowGoalCapture(true);
       return;
     }
@@ -48,14 +67,58 @@ export default function NudgeApp() {
   };
 
   const handleGoalComplete = (g: Goal) => {
-    setGoal(g);
+    // addGoal already wrote to localStorage inside GoalOnboardingScreen
+    const newGoals = [...goals, g];
+    setGoals(newGoals);
+
+    // Auto-set active goal if none selected yet or this is the first goal
+    if (!activeGoalId || newGoals.length === 1) {
+      setActiveGoalId(g.id);
+      saveActiveGoalId(g.id);
+    }
+
     setShowGoalCapture(false);
+
+    if (goalCaptureSource === "goals") {
+      setScreen("goals");
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    // Onboarding path
     if (!hasCompletedFirstTrade()) {
       setShowGuidedJourney(true);
     } else {
       setScreen("explore");
     }
     window.scrollTo(0, 0);
+  };
+
+  const handleCancelGoalCapture = () => {
+    setShowGoalCapture(false);
+    setScreen("goals");
+    window.scrollTo(0, 0);
+  };
+
+  const handleAddGoalFromGoals = () => {
+    setGoalCaptureSource("goals");
+    setShowGoalCapture(true);
+  };
+
+  const handleGoalsChanged = (updated: Goal[]) => {
+    saveGoals(updated);
+    setGoals(updated);
+    // If the active goal was deleted, fall back to first remaining goal
+    if (activeGoalId && !updated.find((g) => g.id === activeGoalId)) {
+      const next = updated[0]?.id ?? null;
+      setActiveGoalId(next);
+      saveActiveGoalId(next);
+    }
+  };
+
+  const handleSetActiveGoal = (id: string) => {
+    setActiveGoalId(id);
+    // saveActiveGoalId already called from GoalsScreen before this callback
   };
 
   const handleSkipGuided = () => {
@@ -67,6 +130,12 @@ export default function NudgeApp() {
   const handleCompleteGuided = () => {
     setShowGuidedJourney(false);
     setScreen("explore");
+    window.scrollTo(0, 0);
+  };
+
+  // Navigate to goals screen when user clicks "manage goals" in GoalBanner
+  const handleChangeGoal = () => {
+    setScreen("goals");
     window.scrollTo(0, 0);
   };
 
@@ -93,14 +162,21 @@ export default function NudgeApp() {
     if (next === wallet) return;
     persistWallet(next);
     setWallet(next);
+    markFirstTradeComplete();
     setWalkStep(99);
   };
 
-  const handleBuy = (symbol: string, name: string, quantity: number, price: number): boolean => {
+  const handleBuy = (
+    symbol: string,
+    name: string,
+    quantity: number,
+    price: number
+  ): boolean => {
     const next = buyShares(wallet, { symbol, name }, quantity, price);
     if (next === wallet) return false;
     persistWallet(next);
     setWallet(next);
+    markFirstTradeComplete();
     return true;
   };
 
@@ -120,12 +196,6 @@ export default function NudgeApp() {
     )
       return;
     setWallet(resetWalletData());
-  };
-
-  const handleChangeGoal = () => {
-    if (!window.confirm("Change your goal? You can set a new one right away.")) return;
-    clearGoal();
-    setGoal(null);
   };
 
   const holdingsList = Object.values(wallet.holdings);
@@ -148,7 +218,11 @@ export default function NudgeApp() {
       }
     >
       {showGoalCapture ? (
-        <GoalOnboardingScreen onComplete={handleGoalComplete} />
+        <GoalOnboardingScreen
+          onComplete={handleGoalComplete}
+          onCancel={goalCaptureSource === "goals" ? handleCancelGoalCapture : undefined}
+          isFirst={goals.length === 0}
+        />
       ) : showGuidedJourney && goal ? (
         <GuidedJourneyScreen
           goal={goal}
@@ -166,6 +240,17 @@ export default function NudgeApp() {
           )}
 
           {screen === "home" && <HomeScreen onExplore={() => goTo("explore")} />}
+
+          {screen === "goals" && (
+            <GoalsScreen
+              goals={goals}
+              totalValue={totalValue}
+              activeGoalId={activeGoalId}
+              onGoalsChange={handleGoalsChanged}
+              onSetActiveGoal={handleSetActiveGoal}
+              onAddGoal={handleAddGoalFromGoals}
+            />
+          )}
 
           {screen === "explore" && (
             <ExploreScreen
@@ -186,7 +271,10 @@ export default function NudgeApp() {
               onCloseWalk={() => setWalkStep(0)}
               onConfirmBuy={confirmBuy}
               onGoTrade={() => goTo("trade")}
-              onDecide={() => { setScreen("decide"); window.scrollTo(0, 0); }}
+              onDecide={() => {
+                setScreen("decide");
+                window.scrollTo(0, 0);
+              }}
             />
           )}
 
@@ -204,7 +292,10 @@ export default function NudgeApp() {
               companyIdx={companyIdx}
               searchedCompany={searchedCompany}
               goal={goal}
-              onBack={() => { setScreen("explore"); window.scrollTo(0, 0); }}
+              onBack={() => {
+                setScreen("explore");
+                window.scrollTo(0, 0);
+              }}
               onGoTrade={(symbol, name) => {
                 setTradePreselect({ symbol, name });
                 setScreen("trade");

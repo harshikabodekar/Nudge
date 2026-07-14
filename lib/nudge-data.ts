@@ -200,9 +200,9 @@ export const companies: Company[] = [
     logoBg: "#E6EFE7",
     logoColor: "#3E7D4F",
     sector: "Automobiles",
-    vibe: "green",
-    vibeLabel: "Looks steady",
-    price: 950,
+    vibe: "yellow",
+    vibeLabel: "Mixed signals",
+    price: 334,
     stats: [
       {
         key: "pe",
@@ -214,23 +214,23 @@ export const companies: Company[] = [
       {
         key: "mcap",
         label: "Market cap",
-        value: "₹3.5L Cr",
+        value: "₹1.2L Cr",
         explain:
-          "the total value of the whole company. yours is large and well-established — a household name in India.",
+          "the total value of the whole company. TMPV is the demerged passenger-vehicle entity — smaller in size than the old combined Tata Motors stock.",
       },
       {
         key: "high",
         label: "52-wk high",
-        value: "₹1,179",
+        value: "₹740",
         explain:
-          "the highest it traded in the last year. yours is ₹1,179 — today's ₹950 sits below the year's high.",
+          "the highest it traded in the last year. yours is ₹740 — today's price is well below that peak, reflecting post-demerger price discovery.",
       },
       {
         key: "low",
         label: "52-wk low",
-        value: "₹600",
+        value: "₹295",
         explain:
-          "the lowest in the last year. yours is ₹600 — today's price is well above it, a sign of a steady climb.",
+          "the lowest in the last year. yours is ₹295 — today's price is near the year's low as the market figures out how to value this newly demerged entity.",
       },
     ],
     rows: [
@@ -242,32 +242,32 @@ export const companies: Company[] = [
       {
         icon: "📈",
         label: "How it's doing lately",
-        text: "Had a strong run. Their JLR luxury arm and new electric cars have been selling well.",
+        text: "Rough patch. This is the newly demerged passenger vehicle entity — the market is still figuring out how to price it separately from the commercial vehicle business. Price is near its year low.",
       },
       {
         icon: "🌱",
         label: "Good for a first-timer?",
-        text: "Looks good — a well-known name that's been on a fairly steady climb.",
+        text: "Worth studying more than buying right now. The demerger makes it harder to read than a company with a longer independent history.",
       },
       {
         icon: "₹",
         label: "What ₹500 buys you",
-        text: "₹500 goes further here than you'd expect — enough to actually own a piece, no saving up required.",
+        text: "At ~₹334 a share, ₹500 gets you 1 share with change left over. Low barrier to entry — but understand what you're buying first.",
       },
       {
         icon: "👀",
         label: "One thing to watch",
-        text: "Car sales rise and fall with the economy. A slow year can dent profits.",
+        text: "How the passenger vehicle business performs on its own — and whether EV volumes (Nexon EV, Punch EV) grow fast enough to justify a re-rating.",
       },
     ],
     pros: [
-      "PE of ~9 is low — you're not overpaying for each rupee it earns",
-      "JLR (Jaguar Land Rover) has had strong luxury sales internationally",
-      "Growing EV lineup with Nexon EV and Punch EV gaining market share",
+      "Affordable entry — ₹500 buys a whole share",
+      "Strong EV lineup (Nexon EV, Punch EV) gaining market share in India",
+      "Tata brand backing and decades of manufacturing know-how",
     ],
     cons: [
-      "Car sales are cyclical — a slow economy shrinks demand fast",
-      "JLR's success depends on global luxury spending, which can be volatile",
+      "Newly demerged entity — limited standalone price history to judge against",
+      "Trading near its 52-week low, reflecting uncertainty post-demerger",
     ],
   },
   {

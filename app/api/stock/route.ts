@@ -10,12 +10,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: null, error: "invalid_symbol" }, { status: 400 });
   }
 
+  const CDN_CACHE = "s-maxage=3600, stale-while-revalidate=86400";
+
   try {
     const data = await getStockData(symbol);
     if (!data) {
-      return NextResponse.json({ data: null, error: "unavailable" });
+      return NextResponse.json(
+        { data: null, error: "unavailable" },
+        { headers: { "Cache-Control": CDN_CACHE } }
+      );
     }
-    return NextResponse.json({ data });
+    return NextResponse.json({ data }, { headers: { "Cache-Control": CDN_CACHE } });
   } catch {
     return NextResponse.json({ data: null, error: "fetch_failed" });
   }

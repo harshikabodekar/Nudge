@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { saveGoal, type Goal } from "@/lib/goal";
+import { addGoal, type Goal } from "@/lib/goals";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -25,29 +25,36 @@ const fieldLabelStyle: React.CSSProperties = {
   marginBottom: 8,
 };
 
-export default function GoalOnboardingScreen({ onComplete }: { onComplete: (goal: Goal) => void }) {
+export default function GoalOnboardingScreen({
+  onComplete,
+  onCancel,
+  isFirst = true,
+}: {
+  onComplete: (goal: Goal) => void;
+  onCancel?: () => void;
+  isFirst?: boolean;
+}) {
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
-  const [timeframe, setTimeframe] = useState("");
+  const [monthly, setMonthly] = useState("");
 
   const trimmedLabel = label.trim();
   const amountNum = Number(amount);
   const hasValidAmount = amount.trim() !== "" && Number.isFinite(amountNum) && amountNum > 0;
-  const timeframeNum = timeframe.trim() ? Number(timeframe) : undefined;
-  const hasValidTimeframe =
-    timeframeNum === undefined || (Number.isFinite(timeframeNum) && timeframeNum > 0);
+  const monthlyNum = monthly.trim() ? Number(monthly) : undefined;
+  const hasValidMonthly =
+    monthlyNum === undefined || (Number.isFinite(monthlyNum) && monthlyNum > 0);
 
-  const canConfirm = trimmedLabel.length > 0 && hasValidAmount && hasValidTimeframe;
+  const canConfirm = trimmedLabel.length > 0 && hasValidAmount && hasValidMonthly;
 
   const handleConfirm = () => {
     if (!canConfirm) return;
-    const goal: Goal = {
+    const goal = addGoal({
       label: trimmedLabel,
       targetAmount: amountNum,
-      ...(timeframeNum !== undefined ? { timeframeMonths: timeframeNum } : {}),
-      createdAt: Date.now(),
-    };
-    saveGoal(goal);
+      ...(monthlyNum !== undefined ? { monthlyAmount: monthlyNum } : {}),
+      allocation: isFirst ? 100 : 0,
+    });
     onComplete(goal);
   };
 
@@ -59,6 +66,27 @@ export default function GoalOnboardingScreen({ onComplete }: { onComplete: (goal
         padding: "clamp(40px, 8vw, 88px) 22px 80px",
       }}
     >
+      {onCancel && (
+        <button
+          onClick={onCancel}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontFamily: "var(--font-quicksand), sans-serif",
+            fontWeight: 700,
+            fontSize: 14,
+            color: "#A89E8B",
+            padding: "0 0 24px",
+          }}
+        >
+          ← back to goals
+        </button>
+      )}
+
       <div style={{ animation: "nudgeRise .5s ease both", marginBottom: 28 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 22 }}>
           <span
@@ -98,7 +126,14 @@ export default function GoalOnboardingScreen({ onComplete }: { onComplete: (goal
                 gap: 5,
               }}
             >
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent, #4F9D69)" }} />
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: "var(--accent, #4F9D69)",
+                }}
+              />
               online · here to help
             </div>
           </div>
@@ -120,8 +155,9 @@ export default function GoalOnboardingScreen({ onComplete }: { onComplete: (goal
             animation: "bubbleIn .4s ease both",
           }}
         >
-          hey, before we look at any companies — what are you actually saving
-          toward? 👋
+          {isFirst
+            ? "hey, before we look at any companies — what are you actually saving toward? 👋"
+            : "what's this new goal? 🎯"}
         </div>
       </div>
 
@@ -173,17 +209,29 @@ export default function GoalOnboardingScreen({ onComplete }: { onComplete: (goal
         </div>
 
         <div style={{ marginBottom: 30 }}>
-          <label style={fieldLabelStyle}>By when?</label>
-          <input
-            type="number"
-            min={1}
-            value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value)}
-            placeholder="e.g. 6 months — or leave blank"
-            style={inputStyle}
-          />
+          <label style={fieldLabelStyle}>How much can you set aside per month?</label>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span
+              style={{
+                fontFamily: "var(--font-quicksand), sans-serif",
+                fontWeight: 700,
+                fontSize: 18,
+                color: "#9A907E",
+              }}
+            >
+              ₹
+            </span>
+            <input
+              type="number"
+              min={1}
+              value={monthly}
+              onChange={(e) => setMonthly(e.target.value)}
+              placeholder="e.g. 2,000 — or leave blank"
+              style={inputStyle}
+            />
+          </div>
           <p style={{ margin: "7px 0 0", fontSize: 13, fontWeight: 600, color: "#A89E8B" }}>
-            optional — skip it if you&apos;re not sure yet.
+            optional — helps us show you a rough projection.
           </p>
         </div>
 
@@ -206,9 +254,17 @@ export default function GoalOnboardingScreen({ onComplete }: { onComplete: (goal
               : "none",
           }}
         >
-          That&apos;s my goal &nbsp;→
+          {isFirst ? "That’s my goal  →" : "Add this goal  →"}
         </button>
-        <p style={{ margin: "12px 0 0", textAlign: "center", fontSize: 13, fontWeight: 600, color: "#A89E8B" }}>
+        <p
+          style={{
+            margin: "12px 0 0",
+            textAlign: "center",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#A89E8B",
+          }}
+        >
           we just need a goal and an amount to get going.
         </p>
       </div>

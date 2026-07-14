@@ -8,9 +8,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
+  const CDN_CACHE = "s-maxage=3600, stale-while-revalidate=86400";
+
   try {
     const results = await searchSymbols(q);
-    return NextResponse.json({ results });
+    return NextResponse.json({ results }, { headers: { "Cache-Control": CDN_CACHE } });
   } catch {
     return NextResponse.json({ results: [], error: "search_failed" });
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { fmt } from "@/lib/nudge-data";
-import type { Goal } from "@/lib/goal";
+import type { Goal } from "@/lib/goals";
 
 export default function GoalBanner({ goal, onChangeGoal }: { goal: Goal; onChangeGoal: () => void }) {
   return (
@@ -37,10 +37,19 @@ export default function GoalBanner({ goal, onChangeGoal }: { goal: Goal; onChang
           flexShrink: 1,
         }}
       >
-        {`🎯 Saving toward: ${goal.label} · ₹${fmt(goal.targetAmount)}`}
+        {`🎯 ${goal.label} · ₹${fmt(goal.targetAmount)}`}
       </span>
-      <span style={{ fontSize: 12, fontWeight: 700, color: "#A89E8B", textDecoration: "underline", textUnderlineOffset: 2, flexShrink: 0 }}>
-        change
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#A89E8B",
+          textDecoration: "underline",
+          textUnderlineOffset: 2,
+          flexShrink: 0,
+        }}
+      >
+        manage goals
       </span>
     </button>
   );

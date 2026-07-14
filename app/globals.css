@@ -152,9 +152,8 @@ body {
   transition: background 0.18s ease;
 }
 
-/* At 480px the four nav labels ("Home Explore About Trade") plus logo
-   don't fit at default size — shrink text + padding, hide the wordmark. */
-@media (max-width: 480px) {
+/* At 520px the five nav labels plus logo start crowding — shrink and hide wordmark. */
+@media (max-width: 520px) {
   .nudge-nav-btn {
     font-size: 13px;
     padding: 8px 10px;
@@ -163,10 +162,26 @@ body {
     display: none;
   }
 }
+@media (max-width: 420px) {
+  .nudge-nav-btn {
+    font-size: 12px;
+    padding: 7px 7px;
+  }
+}
 
 /* ── Preset company chip tap target ────────────────────────────────────── */
 .nudge-preset-chip {
   min-height: 44px;
+}
+
+/* ── Goal milestone celebration ─────────────────────────────────────────── */
+@keyframes nudgeCelebIn {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.nudge-celeb {
+  animation: nudgeCelebIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* ── Horizontally-scrollable chip row, no visible scrollbar ─────────────── */

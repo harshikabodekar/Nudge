@@ -1,4 +1,4 @@
-import type { Goal } from "@/lib/goal";
+import type { Goal } from "@/lib/goals";
 import type { Company } from "@/lib/nudge-data";
 
 export type GoalFitVerdict = "good" | "caution" | "risky";

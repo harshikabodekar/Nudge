@@ -1,7 +1,7 @@
 "use client";
 
 import { fmt } from "@/lib/nudge-data";
-import type { Goal } from "@/lib/goal";
+import type { Goal } from "@/lib/goals";
 
 export default function GoalProgress({ goal, totalValue }: { goal: Goal; totalValue: number }) {
   const pct = Math.min(100, Math.max(0, (totalValue / goal.targetAmount) * 100));
